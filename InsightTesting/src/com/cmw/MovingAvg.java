@@ -1,5 +1,6 @@
 package com.cmw;
 
+import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -17,6 +18,7 @@ public class MovingAvg {
         System.out.println("hello");
         FileInputStream in = null;
         FileWriter out = null;
+        BufferedWriter bw = null;
         String[] files = {"DL", "LUL", "SQ", "DL2", "LUL2", "SQ2", "DL3", "LUL3", "SQ3"};
 
         ArrayList<Double> points = new ArrayList<>();
@@ -32,22 +34,25 @@ public class MovingAvg {
                 filteredPoints.add(movingAvg(points, k));
                 k++;
             }
+            System.out.print("file: " + file + " \tpoints size: " + points.size() + " \tfilts size: " + filteredPoints.size() );
 
-            out = new FileWriter("outputs/output" + file + ".csv" );
+            out = new FileWriter("justFilteredData/output" + file + ".csv" );
+            bw = new BufferedWriter(out);
+            int writes = 0;
             for (int i = 0; i < points.size(); i++) {
-                out.write(points.get(i) + ", " + filteredPoints.get(i) + "\n");
+                bw.write(filteredPoints.get(i) + "\n");
+                writes++;
             }
+
+            System.out.println(" \twrites: " + writes);
+            bw.close();
+            in.close();
+            out.close();
 
             points.clear();
             filteredPoints.clear();
         }
 
-            if (in != null) {
-                in.close();
-            }
-            if (out != null) {
-                out.close();
-            }
 
 
         }

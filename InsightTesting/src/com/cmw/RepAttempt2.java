@@ -27,7 +27,7 @@ public class RepAttempt2 {
         System.out.println("bar");
 
 
-        in = new FileInputStream("justFilteredData/outputSQ.csv");
+        in = new FileInputStream("justFilteredData/outputLUL2.csv");
         Scanner scan = new Scanner(in);
 
         while (scan.hasNextDouble()) {
@@ -76,6 +76,12 @@ public class RepAttempt2 {
             System.out.println("NEW FLATSPOT BETWEEN " + start + " and " + newEnd);
 
         }
+
+        // so now i know where all the flat spots are,,,
+        // the reps are, after 1st flat spot,
+        // infact, after every flat spot,
+        //is there a flat spot at the end?
+        // i guess so,
 
 
     }
