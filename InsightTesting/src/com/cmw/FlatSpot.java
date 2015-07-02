@@ -33,4 +33,8 @@ public class FlatSpot {
         if ( i > end ) return false;
         return true;
     }
+
+    public int getSize() {
+        return end-start;
+    }
 }

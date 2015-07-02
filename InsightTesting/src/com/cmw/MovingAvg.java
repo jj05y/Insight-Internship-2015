@@ -19,7 +19,7 @@ public class MovingAvg {
         FileInputStream in = null;
         FileWriter out = null;
         BufferedWriter bw = null;
-        String[] files = {"DL", "LUL", "SQ", "DL2", "LUL2", "SQ2", "DL3", "LUL3", "SQ3"};
+        String[] files = {"DL", "LUL", "SQ", "DL2", "LUL2", "SQ2", "DL3", "LUL3", "SQ3", "TJ16", "SQleftShank16"};
 
         ArrayList<Double> points = new ArrayList<>();
         ArrayList<Double> filteredPoints = new ArrayList<>();
