@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="android:Theme.Holo">
+        <!-- API 11 theme customizations can go here. -->
+    </style>
+
+    <!-- Navigation Drawer styling -->
+    <style name="NavDrawerItemSelected" parent="AppBaseTheme">
+        <item name="android:activatedBackgroundIndicator">@drawable/activated_background</item>
+    </style>
+
+    <style name="TwoWayView">
+        <item name="android:orientation">horizontal</item>
+    </style>
+</resources>
