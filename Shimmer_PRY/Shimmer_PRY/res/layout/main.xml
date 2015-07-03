@@ -13,7 +13,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="X Values (Filtered)"
+            android:text="Quat w"
             android:id="@+id/x_txt"
             android:textSize="15dp" />
 
@@ -21,7 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Y Values (Filtered)"
+            android:text="Quat x"
             android:id="@+id/y_txt"
             android:textSize="15dp" />
 
@@ -29,7 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Z Values (Filtered)"
+            android:text="Quat y"
             android:id="@+id/z_txt"
             android:textSize="15dp" />
 
@@ -37,7 +37,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Angle Values (Filtered)"
+            android:text="Quat z"
             android:id="@+id/textView"
             android:textSize="15dp" />
 

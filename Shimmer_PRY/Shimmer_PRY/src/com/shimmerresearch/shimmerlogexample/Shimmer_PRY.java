@@ -320,7 +320,7 @@ public class Shimmer_PRY extends Activity {
 							double filteredz = movingAverage(zVals);
 							z = (float) filteredz;
 
-							AccelMag.add( Math.sqrt(Math.pow(x,2)+ Math.pow(y,2) + Math.pow(z,2)));
+							//AccelMag.add( Math.sqrt(Math.pow(x,2)+ Math.pow(y,2) + Math.pow(z,2)));
 
 							AxisAngle4d aa = new AxisAngle4d(x, y, z, angle); //Axis angle representation of x,y,z,and angle
 
@@ -479,13 +479,13 @@ public class Shimmer_PRY extends Activity {
 		roll_seriesFormat = new LineAndPointFormatter(Color.rgb(255, 255, 0), null, null, null);
 		yaw_seriesFormat = new LineAndPointFormatter(Color.rgb(0, 255, 255), null, null, null);
 
-		pitch_series = new SimpleXYSeries(PitchVals.subList(indexOfFirstVisiblePoint, SAMPLE_SIZE), SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "Accel X");
+		pitch_series = new SimpleXYSeries(PitchVals.subList(indexOfFirstVisiblePoint, SAMPLE_SIZE), SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "Pitch");
 		pitch_series.useImplicitXVals();
 
-		roll_series = new SimpleXYSeries(RollVals.subList(RollVals.size() - SAMPLE_SIZE, RollVals.size()), SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "Accel Y");
+		roll_series = new SimpleXYSeries(RollVals.subList(RollVals.size() - SAMPLE_SIZE, RollVals.size()), SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "Roll");
 		roll_series.useImplicitXVals();
 
-		yaw_series = new SimpleXYSeries(YawVals.subList(YawVals.size() - SAMPLE_SIZE, YawVals.size()), SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "Accel Z");
+		yaw_series = new SimpleXYSeries(YawVals.subList(YawVals.size() - SAMPLE_SIZE, YawVals.size()), SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "Yaw");
 		yaw_series.useImplicitXVals();
 
 		plot.setTicksPerRangeLabel(3);
