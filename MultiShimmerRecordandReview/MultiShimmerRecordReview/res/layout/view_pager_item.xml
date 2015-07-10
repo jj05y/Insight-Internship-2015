@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="horizontal">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="Large Text"
+            android:id="@+id/text_new_review_name" />
+
+        <Spinner
+            android:id="@+id/exercise_spinner"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+
+        <Spinner
+            android:id="@+id/label_spinner"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+
+        <VideoView
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:id="@+id/new_review_video_view"
+            android:layout_weight="0"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp" />
+    </LinearLayout>
+
+    <com.androidplot.xy.XYPlot
+        android:id="@+id/new_review_plot"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        androidplot.renderMode="use_background_thread"
+        androidPlot.title="Plot"
+        androidPlot.domainLabel="Domain"
+        androidPlot.rangeLabel="Range"
+        androidPlot.titleWidget.labelPaint.textSize="@dimen/title_font_size"
+        androidPlot.domainLabelWidget.labelPaint.textSize="@dimen/domain_label_font_size"
+        androidPlot.rangeLabelWidget.labelPaint.textSize="@dimen/range_label_font_size"
+        androidPlot.graphWidget.marginTop="20dp"
+        androidPlot.graphWidget.marginLeft="10dp"
+        androidPlot.graphWidget.marginBottom="25dp"
+        androidPlot.graphWidget.marginRight="10dp"
+        androidPlot.graphWidget.rangeLabelPaint.textSize="@dimen/range_tick_label_font_size"
+        androidPlot.graphWidget.rangeOriginLabelPaint.textSize="@dimen/range_tick_label_font_size"
+        androidPlot.graphWidget.domainLabelPaint.textSize="@dimen/domain_tick_label_font_size"
+        androidPlot.graphWidget.domainOriginLabelPaint.textSize="@dimen/domain_tick_label_font_size"
+        androidPlot.legendWidget.textPaint.textSize="@dimen/legend_text_font_size"
+        androidPlot.legendWidget.iconSizeMetrics.heightMetric.value="10dp"
+        androidPlot.legendWidget.iconSizeMetrics.widthMetric.value="10dp"
+        androidPlot.legendWidget.heightMetric.value="25dp"
+        androidPlot.legendWidget.positionMetrics.anchor="bottom_right"
+        android:layout_weight="1" />
+
+</LinearLayout>

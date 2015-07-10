@@ -1,4 +1,4 @@
-package com.shimmerresearch.MultiShimmerRecordReview.Util;
+package com.shimmerresearch.MultiShimmerRecordReview.MiscUtil;
 
 import android.content.Context;
 import android.hardware.Camera;
@@ -70,7 +70,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
 
         try {
-            mCamera.setDisplayOrientation(90);
+            mCamera.setDisplayOrientation(0);
         } catch (Exception e) {
             //nopex
         }

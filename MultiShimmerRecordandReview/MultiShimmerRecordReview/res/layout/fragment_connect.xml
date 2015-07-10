@@ -146,7 +146,8 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="vertical"
-            android:layout_margin="30dp">
+            android:layout_marginLeft="30dp"
+            android:layout_marginRight="30dp">
 
             <Button
                 android:id="@+id/button_connect_all"
@@ -159,6 +160,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Disconnect All" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Forget All"
+                android:id="@+id/button_forget" />
 
         </LinearLayout>
 

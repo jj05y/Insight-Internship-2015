@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.shimmerresearch.MultiShimmerRecordReview.Activities.DeviceListActivity;
+import com.shimmerresearch.MultiShimmerRecordReview.Constants.C;
 import com.shimmerresearch.MultiShimmerRecordReview.Interfaces.Linker;
 import com.shimmerresearch.android.Shimmer;
 import com.shimmerresearch.driver.Configuration;
@@ -30,11 +31,6 @@ public class ConnectFragment extends Fragment {
 
     public final static String DEFAULT_ADDRESS = "00:00:00:00:00:00";
     private static final int REQUEST_CONNECT_SHIMMER = 2;
-    public final static String LEFT_THIGH = "leftthigh";
-    public final static String RIGHT_THIGH = "rightthigh";
-    public final static String LEFT_CALF = "leftcalf";
-    public final static String RIGHT_CALF = "rightcalf";
-    public final static String LOWER_BACK = "lowerback";
 
     private String currentlyConnecting = "";
     private Linker linker;
@@ -92,24 +88,24 @@ public class ConnectFragment extends Fragment {
 
                 switch (view.getId()) {
                     case R.id.button_lt_n:
-                        clickedSensor = LEFT_THIGH;
+                        clickedSensor = C.LEFT_THIGH;
                         break;
                     case R.id.button_lc_n:
-                        clickedSensor = LEFT_CALF;
+                        clickedSensor = C.LEFT_CALF;
                         break;
                     case R.id.button_lb_n:
-                        clickedSensor = LOWER_BACK;
+                        clickedSensor = C.LOWER_BACK;
                         break;
                     case R.id.button_rt_n:
-                        clickedSensor = RIGHT_THIGH;
+                        clickedSensor = C.RIGHT_THIGH;
                         break;
                     case R.id.button_rc_n:
-                        clickedSensor = RIGHT_CALF;
+                        clickedSensor = C.RIGHT_CALF;
                         break;
                 }
                 if (!isConnected.get(clickedSensor)) {
                     currentlyConnecting = clickedSensor; //this holds clicked sensor while device list activity is launched
-                    Log.d(null,"clicked button is " + clickedSensor );
+                    Log.d(null, "clicked button is " + clickedSensor);
                     Intent i;
                     i = new Intent(getActivity(), DeviceListActivity.class);
 
@@ -124,8 +120,7 @@ public class ConnectFragment extends Fragment {
         };
 
 
-
-         View.OnClickListener oldListener =  new View.OnClickListener() {
+        View.OnClickListener oldListener = new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
@@ -133,19 +128,19 @@ public class ConnectFragment extends Fragment {
 
                 switch (view.getId()) {
                     case R.id.button_lt_o:
-                        clickedSensor = LEFT_THIGH;
+                        clickedSensor = C.LEFT_THIGH;
                         break;
                     case R.id.button_lc_o:
-                        clickedSensor = LEFT_CALF;
+                        clickedSensor = C.LEFT_CALF;
                         break;
                     case R.id.button_lb_o:
-                        clickedSensor = LOWER_BACK;
+                        clickedSensor = C.LOWER_BACK;
                         break;
                     case R.id.button_rt_o:
-                        clickedSensor = RIGHT_THIGH;
+                        clickedSensor = C.RIGHT_THIGH;
                         break;
                     case R.id.button_rc_o:
-                        clickedSensor = RIGHT_CALF;
+                        clickedSensor = C.RIGHT_CALF;
                         break;
                 }
                 if (!isConnected.get(clickedSensor)) {
@@ -191,7 +186,6 @@ public class ConnectFragment extends Fragment {
         rcOld.setOnClickListener(oldListener);
 
 
-
         Button connectAllButton = (Button) myInflatedView.findViewById(R.id.button_connect_all);
         Button disconnectAllButton = (Button) myInflatedView.findViewById(R.id.button_disconnect_all);
 
@@ -200,7 +194,7 @@ public class ConnectFragment extends Fragment {
             public void onClick(View view) {
                 Iterator<Map.Entry<String, String>> it = addresses.entrySet().iterator();
                 while (it.hasNext()) {
-                    Map.Entry<String, String> e = (Map.Entry<String, String>)  it.next();
+                    Map.Entry<String, String> e = (Map.Entry<String, String>) it.next();
                     if (!e.getValue().equals(DEFAULT_ADDRESS)) {
                         String key = e.getKey();
                         if (!isConnected.get(key)) {
@@ -208,10 +202,11 @@ public class ConnectFragment extends Fragment {
                             shimmers.get(key).connect(addresses.get(key), "default");
                             setButtonTexts();
                         } else {
-                            shimmers.get(key).stop();
-                            isConnected.put(key, false);
-                            setButtonTexts();
-                            redrawLocalIndicators();
+                            //todo sort this,,, disconnect connected whien connecting some
+                            //shimmers.get(key).stop();
+                            //isConnected.put(key, false);
+                            //setButtonTexts();
+                            //redrawLocalIndicators();
                         }
                     }
                 }
@@ -224,18 +219,32 @@ public class ConnectFragment extends Fragment {
             public void onClick(View view) {
                 Iterator<Map.Entry<String, Shimmer>> it = shimmers.entrySet().iterator();
                 while (it.hasNext()) {
-                    Map.Entry<String, Shimmer> e = (Map.Entry<String,Shimmer>) it.next();
+                    Map.Entry<String, Shimmer> e = (Map.Entry<String, Shimmer>) it.next();
                     String key = e.getKey();
-                   // if (isConnected.get(key)) {
-                        e.getValue().stop();
-                        isConnected.put(key, false);
-                        setButtonTexts();
-                        redrawLocalIndicators();
-                  //  }
+                    // if (isConnected.get(key)) {
+                    e.getValue().stop();
+                    isConnected.put(key, false);
+                    setButtonTexts();
+                    redrawLocalIndicators();
+                    //  }
                 }
             }
         });
 
+        Button forgetButton = (Button) myInflatedView.findViewById(R.id.button_forget);
+        forgetButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                disconnectAllButton.performClick();
+                Iterator<String> it = addresses.keySet().iterator();
+                while (it.hasNext()) {
+                    String key = it.next();
+                    addresses.put(key, DEFAULT_ADDRESS);
+                    redrawLocalIndicators();
+                    setButtonTexts();
+                }
+            }
+        });
 
 
         redrawLocalIndicators();
@@ -246,29 +255,29 @@ public class ConnectFragment extends Fragment {
 
     public void setButtonTexts() {
         Iterator it = isConnected.entrySet().iterator();
-        while (it.hasNext()){
-            Map.Entry<String, Boolean> e = (Map.Entry<String,Boolean>) it.next();
+        while (it.hasNext()) {
+            Map.Entry<String, Boolean> e = (Map.Entry<String, Boolean>) it.next();
             Button newButton = null;
             Button oldButton = null;
 
-            switch ( e.getKey()) {
-                case LEFT_THIGH:
+            switch (e.getKey()) {
+                case C.LEFT_THIGH:
                     newButton = ltNew;
                     oldButton = ltOld;
                     break;
-                case LEFT_CALF:
+                case C.LEFT_CALF:
                     newButton = lcNew;
                     oldButton = lcOld;
                     break;
-                case LOWER_BACK:
+                case C.LOWER_BACK:
                     newButton = lbNew;
                     oldButton = lbOld;
                     break;
-                case RIGHT_THIGH:
+                case C.RIGHT_THIGH:
                     newButton = rtNew;
                     oldButton = rtOld;
                     break;
-                case RIGHT_CALF:
+                case C.RIGHT_CALF:
                     newButton = rcNew;
                     oldButton = rcOld;
                     break;
@@ -294,19 +303,19 @@ public class ConnectFragment extends Fragment {
         Button b = null;
 
         switch (key) {
-            case LEFT_THIGH:
+            case C.LEFT_THIGH:
                 b = ltOld;
                 break;
-            case LEFT_CALF:
+            case C.LEFT_CALF:
                 b = lcOld;
                 break;
-            case LOWER_BACK:
+            case C.LOWER_BACK:
                 b = lbOld;
                 break;
-            case RIGHT_THIGH:
+            case C.RIGHT_THIGH:
                 b = rtOld;
                 break;
-            case RIGHT_CALF:
+            case C.RIGHT_CALF:
                 b = rcOld;
                 break;
         }
@@ -320,55 +329,55 @@ public class ConnectFragment extends Fragment {
     }
 
     public void redrawLocalIndicators() {
-        if (!isConnected.get(LEFT_THIGH)) {
+        if (!isConnected.get(C.LEFT_THIGH)) {
             ((ImageView) myInflatedView.findViewById(R.id.imageView)).setImageResource(R.drawable.ic_redcircle);
             ltCode.setText("");
         } else {
             ((ImageView) myInflatedView.findViewById(R.id.imageView)).setImageResource(R.drawable.ic_greencircle);
-            ltCode.setText(workOutSensorCode(LEFT_THIGH));
+            ltCode.setText(workOutSensorCode(C.LEFT_THIGH));
         }
 
-        if (!isConnected.get(LEFT_CALF)) {
+        if (!isConnected.get(C.LEFT_CALF)) {
             ((ImageView) myInflatedView.findViewById(R.id.imageView2)).setImageResource(R.drawable.ic_redcircle);
             lcCode.setText("");
         } else {
             ((ImageView) myInflatedView.findViewById(R.id.imageView2)).setImageResource(R.drawable.ic_greencircle);
-            lcCode.setText(workOutSensorCode(LEFT_CALF));
+            lcCode.setText(workOutSensorCode(C.LEFT_CALF));
         }
 
-        if (!isConnected.get(RIGHT_THIGH)) {
+        if (!isConnected.get(C.RIGHT_THIGH)) {
             ((ImageView) myInflatedView.findViewById(R.id.imageView5)).setImageResource(R.drawable.ic_redcircle);
             rtCode.setText("");
         } else {
             ((ImageView) myInflatedView.findViewById(R.id.imageView5)).setImageResource(R.drawable.ic_greencircle);
-            rtCode.setText(workOutSensorCode(RIGHT_THIGH));
+            rtCode.setText(workOutSensorCode(C.RIGHT_THIGH));
         }
 
-        if (!isConnected.get(RIGHT_CALF)) {
+        if (!isConnected.get(C.RIGHT_CALF)) {
             ((ImageView) myInflatedView.findViewById(R.id.imageView6)).setImageResource(R.drawable.ic_redcircle);
             rcCode.setText("");
         } else {
             ((ImageView) myInflatedView.findViewById(R.id.imageView6)).setImageResource(R.drawable.ic_greencircle);
-            rcCode.setText(workOutSensorCode(RIGHT_CALF));
+            rcCode.setText(workOutSensorCode(C.RIGHT_CALF));
         }
 
-        if (!isConnected.get(LOWER_BACK)) {
+        if (!isConnected.get(C.LOWER_BACK)) {
             ((ImageView) myInflatedView.findViewById(R.id.imageView3)).setImageResource(R.drawable.ic_redcircle);
             lbCode.setText("");
         } else {
             ((ImageView) myInflatedView.findViewById(R.id.imageView3)).setImageResource(R.drawable.ic_greencircle);
-            lbCode.setText(workOutSensorCode(LOWER_BACK));
+            lbCode.setText(workOutSensorCode(C.LOWER_BACK));
         }
 
     }
 
     private void initializeIndicators() {
         indicators = new HashMap<>();
-        indicators.put(ConnectFragment.LEFT_THIGH, (ImageView) myInflatedView.findViewById(R.id.imageView));
-        indicators.put(ConnectFragment.LEFT_CALF, (ImageView) myInflatedView.findViewById(R.id.imageView2));
-        indicators.put(ConnectFragment.RIGHT_THIGH, (ImageView) myInflatedView.findViewById(R.id.imageView3));
-        indicators.put(ConnectFragment.RIGHT_CALF, (ImageView) myInflatedView.findViewById(R.id.imageView5));
-        indicators.put(ConnectFragment.LOWER_BACK, (ImageView) myInflatedView.findViewById(R.id.imageView6));
+        indicators.put(C.LEFT_THIGH, (ImageView) myInflatedView.findViewById(R.id.imageView));
+        indicators.put(C.LEFT_CALF, (ImageView) myInflatedView.findViewById(R.id.imageView2));
+        indicators.put(C.RIGHT_THIGH, (ImageView) myInflatedView.findViewById(R.id.imageView3));
+        indicators.put(C.RIGHT_CALF, (ImageView) myInflatedView.findViewById(R.id.imageView5));
+        indicators.put(C.LOWER_BACK, (ImageView) myInflatedView.findViewById(R.id.imageView6));
 
     }
 
@@ -394,14 +403,16 @@ public class ConnectFragment extends Fragment {
     }
 
     private void clearOtherAddresses(String bluetoothAddress) {
-        Iterator<Map.Entry<String, String>> it = (Iterator< Map.Entry<String, String>>) addresses.entrySet().iterator();
+        Iterator<Map.Entry<String, String>> it = (Iterator<Map.Entry<String, String>>) addresses.entrySet().iterator();
         while (it.hasNext()) {
-            Map.Entry<String, String> e =  it.next();
+            Map.Entry<String, String> e = it.next();
             if (e.getValue().equals(bluetoothAddress)) {
                 addresses.put(e.getKey(), DEFAULT_ADDRESS);
             }
         }
     }
+
+
 
 
 }

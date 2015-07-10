@@ -7,10 +7,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.shimmerresearch.MultiShimmerRecordReview.Constants.C;
 import com.shimmerresearch.multishimmerrecordreview.R;
 
 
@@ -25,8 +28,11 @@ public class SaveDialog extends Activity {
 
 
         EditText nameEdit = (EditText) findViewById(R.id.edit_name);
-        EditText exerciseEdit = (EditText) findViewById(R.id.edit_exercise);
         Button saveButton = (Button) findViewById(R.id.button_add_to_data_base);
+
+        Spinner exerciseSpinner = (Spinner) findViewById(R.id.exercise_spinner);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, C.EXERCISES);
+        exerciseSpinner.setAdapter(adapter);
 
 
 
@@ -35,11 +41,11 @@ public class SaveDialog extends Activity {
             public void onClick(View view) {
 
                 String name = nameEdit.getText().toString();
-                String exercise = exerciseEdit.getText().toString();
+                int exercise = exerciseSpinner.getSelectedItemPosition();
                 Log.d(null, "name " + name + " exersise " + exercise);
 
-                if (name.equals("") && exercise.equals("") ) {
-                    Toast.makeText(getBaseContext(), "Enter Name and Exercise", Toast.LENGTH_SHORT).show();
+                if (name.equals("") ) {
+                    Toast.makeText(getBaseContext(), "Enter Name", Toast.LENGTH_SHORT).show();
                 } else {
 
                     Intent i = new Intent();

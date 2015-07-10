@@ -1,4 +1,4 @@
-package com.shimmerresearch.MultiShimmerRecordReview.Util;
+package com.shimmerresearch.MultiShimmerRecordReview.ListItems;
 
 /**
  * Created by joe on 22/06/15.

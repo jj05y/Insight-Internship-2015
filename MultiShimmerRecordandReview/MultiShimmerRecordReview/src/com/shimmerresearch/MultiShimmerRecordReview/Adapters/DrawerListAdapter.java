@@ -1,4 +1,4 @@
-package com.shimmerresearch.MultiShimmerRecordReview.Util;
+package com.shimmerresearch.MultiShimmerRecordReview.Adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -8,6 +8,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.shimmerresearch.MultiShimmerRecordReview.ListItems.NavItem;
 import com.shimmerresearch.multishimmerrecordreview.R;
 
 import java.util.ArrayList;

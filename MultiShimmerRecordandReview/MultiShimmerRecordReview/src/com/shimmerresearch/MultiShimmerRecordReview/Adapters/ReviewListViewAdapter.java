@@ -1,4 +1,4 @@
-package com.shimmerresearch.MultiShimmerRecordReview.Util;
+package com.shimmerresearch.MultiShimmerRecordReview.Adapters;
 
 import android.content.Context;
 import android.widget.ArrayAdapter;

@@ -1,6 +1,6 @@
 package com.shimmerresearch.MultiShimmerRecordReview.Interfaces;
 
-import com.shimmerresearch.MultiShimmerRecordReview.Util.DataBaseHandler;
+import com.shimmerresearch.MultiShimmerRecordReview.DatabaseClasses.DatabaseHandler;
 import com.shimmerresearch.android.Shimmer;
 
 import java.util.HashMap;
@@ -16,9 +16,13 @@ public interface Linker {
 
     HashMap<String, Boolean> getIsConnectedMap();
 
-    DataBaseHandler getDb();
+    DatabaseHandler getDb();
 
     void toggleIsPlotting();
 
     boolean getIsPlotting();
+
+    HashMap<String,Boolean> getPlotSensorsMap();
+
+    HashMap<String,Boolean> getPlotSignalsMap();
 }
