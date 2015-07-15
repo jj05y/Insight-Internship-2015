@@ -25,4 +25,5 @@ public interface Linker {
     HashMap<String,Boolean> getPlotSensorsMap();
 
     HashMap<String,Boolean> getPlotSignalsMap();
+
 }

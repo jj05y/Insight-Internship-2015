@@ -15,12 +15,12 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.androidplot.util.PixelUtils;
@@ -28,14 +28,16 @@ import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.XYPlot;
+import com.androidplot.xy.XYSeries;
 import com.shimmerresearch.MultiShimmerRecordReview.Activities.SaveDialog;
 import com.shimmerresearch.MultiShimmerRecordReview.Constants.C;
-import com.shimmerresearch.MultiShimmerRecordReview.Interfaces.Linker;
-import com.shimmerresearch.MultiShimmerRecordReview.MiscUtil.CameraPreview;
+import com.shimmerresearch.MultiShimmerRecordReview.DatabaseClasses.DatabaseHandler;
 import com.shimmerresearch.MultiShimmerRecordReview.DatabaseClasses.Detail;
+import com.shimmerresearch.MultiShimmerRecordReview.Interfaces.Linker;
+import com.shimmerresearch.MultiShimmerRecordReview.Interfaces.VideoSplitCallBackListener;
+import com.shimmerresearch.MultiShimmerRecordReview.MiscUtil.CameraPreview;
 import com.shimmerresearch.MultiShimmerRecordReview.ObjectClasses.FilmSection;
 import com.shimmerresearch.MultiShimmerRecordReview.ObjectClasses.FlatSpot;
-import com.shimmerresearch.MultiShimmerRecordReview.DatabaseClasses.DatabaseHandler;
 import com.shimmerresearch.MultiShimmerRecordReview.WorkerClasses.RepFinder;
 import com.shimmerresearch.MultiShimmerRecordReview.WorkerClasses.SplitVideo;
 import com.shimmerresearch.android.Shimmer;
@@ -54,7 +56,7 @@ import java.util.Map;
 import java.util.Random;
 
 
-public class RecordFragment extends Fragment {
+public class RecordFragment extends Fragment implements VideoSplitCallBackListener {
 
     private final static int SAMPLE_SIZE = 200;
     private final static int DRAW_SIZE = SAMPLE_SIZE + 6;
@@ -68,26 +70,15 @@ public class RecordFragment extends Fragment {
     private Linker linker;
     HashMap<String, Shimmer> shimmers;
     HashMap<String, Boolean> isConnected;
-    private TextView battText; //not used, but could be :)
+
     private Button streamButton;
+    private Button plotButton;
+    private Button resetButton;
+    private Button saveButton;
 
     private XYPlot plot;
-    private HashMap<String, SimpleXYSeries> accelMagSeriesMap;
-    private HashMap<String, SimpleXYSeries> accelXSeriesMap;
-    private HashMap<String, SimpleXYSeries> accelYSeriesMap;
-    private HashMap<String, SimpleXYSeries> accelZSeriesMap;
-    private HashMap<String, SimpleXYSeries> pitchSeriesMap;
-    private HashMap<String, SimpleXYSeries> rollSeriesMap;
-    private HashMap<String, SimpleXYSeries> yawSeriesMap;
-
-
-    private HashMap<String, ArrayList<Double>> accelMagPointsMap;
-    private HashMap<String, ArrayList<Double>> accelXPointsMap;
-    private HashMap<String, ArrayList<Double>> accelYPointsMap;
-    private HashMap<String, ArrayList<Double>> accelZPointsMap;
-    private HashMap<String, ArrayList<Double>> pitchPointsMap;
-    private HashMap<String, ArrayList<Double>> rollPointsMap;
-    private HashMap<String, ArrayList<Double>> yawPointsMap;
+    private HashMap<String, HashMap<String, SimpleXYSeries>> allSeriesMap;
+    private HashMap<String, HashMap<String, ArrayList<Double>>> allPointsMap;
 
     HashMap<String, Boolean> signalsMap;
     HashMap<String, Boolean> sensorsMap;
@@ -102,12 +93,14 @@ public class RecordFragment extends Fragment {
 
     private DatabaseHandler db;
     private String storedFileName;
-    private int plotSize;
 
     private int indexOfFirstVisibilePoint;
     private PointF firstFinger;
 
     private Random rand;
+    private int numberOfVidsDone;
+    private int numberofVidsToDo;
+
 
 
     public RecordFragment() {
@@ -127,26 +120,26 @@ public class RecordFragment extends Fragment {
         sensorsMap = linker.getPlotSensorsMap();
 
         indexOfFirstVisibilePoint = 0;
+        numberOfVidsDone = 0;
 
         buildPointsMaps();
-
+        buildSeriesMaps();
 
         surface = (FrameLayout) myInflatedView.findViewById(R.id.camera_preview);
 
         isStreaming = false;
 
-        plotSize = 0;
 
         //////////////////////////
         // Plot
         //////////////////////////
 
         plot = (XYPlot) myInflatedView.findViewById(R.id.xyPlot);
-        buildSeriesMaps();
+
 
         plot.setRangeBoundaries(0, 20, BoundaryMode.FIXED);
         plot.setDomainBoundaries(0, DRAW_SIZE, BoundaryMode.FIXED);
-        //plot.setOnTouchListener(new myTouchListener());
+        plot.setOnTouchListener(new myTouchListener());
         plot.setDomainValueFormat(new DecimalFormat("#"));
 
         DashPathEffect dashFx = new DashPathEffect(new float[]{PixelUtils.dpToPix(3), PixelUtils.dpToPix(3)}, 0);
@@ -162,8 +155,15 @@ public class RecordFragment extends Fragment {
         ////////////////////// Plot
 
 
-        Button plotButton = (Button) myInflatedView.findViewById(R.id.button_start_record);
+        plotButton = (Button) myInflatedView.findViewById(R.id.button_start_record);
         streamButton = (Button) myInflatedView.findViewById(R.id.button_start_streaming);
+        saveButton = (Button) myInflatedView.findViewById(R.id.button_save);
+        resetButton = (Button) myInflatedView.findViewById(R.id.button_reset_record);
+
+        //decativate buttons
+        plotButton.setEnabled(false);
+        saveButton.setEnabled(false);
+        resetButton.setEnabled(false);
 
         streamButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -171,7 +171,8 @@ public class RecordFragment extends Fragment {
                 if (linker.getIsPlotting()) {
                     plotButton.performClick();
                 }
-                if (atLeastOneConnected()) {
+                if (isLowerBackConnected()) {
+                    plotButton.setEnabled(true);
                     Iterator<Map.Entry<String, Shimmer>> it = shimmers.entrySet().iterator();
                     if (!isStreaming) {
                         while (it.hasNext()) {
@@ -192,15 +193,14 @@ public class RecordFragment extends Fragment {
                             if (isConnected.get(key)) {
                                 shimmer.stopStreaming();
                             }
+                            plotButton.setEnabled(false);
                         }
                         isStreaming = false;
                         streamButton.setText("Start Streaming");
-                        Log.d(null, "Plot of size" + plotSize);
                     }
                 } else {
-                    Toast.makeText(getActivity(), "Connect All Shimmers before starting streaming", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), "Lower back sensor must be connected", Toast.LENGTH_SHORT).show();
                 }
-                redrawShortly();
             }
 
         });
@@ -212,6 +212,12 @@ public class RecordFragment extends Fragment {
                 if (isStreaming) {
                     startStopRecording();
                     if (!linker.getIsPlotting()) {
+                        Iterator<XYSeries> it = plot.getSeriesSet().iterator();
+                        while (it.hasNext()) {
+                            SimpleXYSeries s = (SimpleXYSeries) it.next();
+                            plot.removeSeries(s);
+                        }
+                        addSignalsToPlot();
                         reset();
                         linker.toggleIsPlotting();
                         plotButton.setText("Stop Recording");
@@ -219,26 +225,27 @@ public class RecordFragment extends Fragment {
                         linker.toggleIsPlotting();
                         plotButton.setText("Start Recording");
                         plotButton.setText("Start Recording");
+                        saveButton.setEnabled(true);
+                        resetButton.setEnabled(true);
+                        plotButton.setEnabled(false);
                     }
                 } else {
                     Toast.makeText(getActivity(), "Start Streaming First", Toast.LENGTH_SHORT).show();
                 }
-                redrawShortly();
             }
         });
 
-        Button saveButton = (Button) myInflatedView.findViewById(R.id.button_save);
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 InputMethodManager inputManager = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
 
                 inputManager.hideSoftInputFromWindow(getActivity().getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
-                if (!linker.getIsPlotting() && accelMagPointsMap.get(C.LOWER_BACK).size() != 0) {
+                if (!linker.getIsPlotting() && allPointsMap.get(C.ACCEL_MAG).get(C.LOWER_BACK).size() != 0) {
 
                     Intent i = new Intent(getActivity(), SaveDialog.class);
                     startActivityForResult(i, SAVE_TO_DB);
-
+                    //save deactivated from on activity result
                 } else {
                     Toast.makeText(getActivity(), "Plot something first", Toast.LENGTH_SHORT).show();
 
@@ -246,12 +253,14 @@ public class RecordFragment extends Fragment {
             }
         });
 
-        Button resetButton = (Button) myInflatedView.findViewById(R.id.button_reset_record);
         resetButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
                 if (!linker.getIsPlotting()) {
+                    plotButton.setEnabled(true);
+                    saveButton.setEnabled(false);
+                    resetButton.setEnabled(false);
                     reset();
                 } else if (linker.getIsPlotting()) {
                     Toast.makeText(getActivity(), "Stop Recording First", Toast.LENGTH_SHORT).show();
@@ -259,44 +268,23 @@ public class RecordFragment extends Fragment {
             }
         });
 
-        reset();
-
 
         return myInflatedView;
     }
 
-    private void buildSeriesMaps() {
-        accelMagSeriesMap = new HashMap<>();
-        accelXSeriesMap = new HashMap<>();
-        accelYSeriesMap = new HashMap<>();
-        accelZSeriesMap = new HashMap<>();
-        pitchSeriesMap = new HashMap<>();
-        rollSeriesMap = new HashMap<>();
-        yawSeriesMap = new HashMap<>();
 
-        for (String s : C.KEYS) {
-            accelMagSeriesMap.put(s, new SimpleXYSeries(s));
-            accelMagSeriesMap.get(s).useImplicitXVals();
-            plot.addSeries(accelMagSeriesMap.get(s), new LineAndPointFormatter(randColor(), null, null, null));
-            accelXSeriesMap.put(s, new SimpleXYSeries(s));
-            accelXSeriesMap.get(s).useImplicitXVals();
-            plot.addSeries(accelXSeriesMap.get(s), new LineAndPointFormatter(randColor(), null, null, null));
-            accelYSeriesMap.put(s, new SimpleXYSeries(s));
-            accelYSeriesMap.get(s).useImplicitXVals();
-            plot.addSeries(accelYSeriesMap.get(s), new LineAndPointFormatter(randColor(), null, null, null));
-            accelZSeriesMap.put(s, new SimpleXYSeries(s));
-            accelZSeriesMap.get(s).useImplicitXVals();
-            plot.addSeries(accelZSeriesMap.get(s), new LineAndPointFormatter(randColor(), null, null, null));
-            pitchSeriesMap.put(s, new SimpleXYSeries(s));
-            pitchSeriesMap.get(s).useImplicitXVals();
-            plot.addSeries(pitchSeriesMap.get(s), new LineAndPointFormatter(randColor(), null, null, null));
-            rollSeriesMap.put(s, new SimpleXYSeries(s));
-            rollSeriesMap.get(s).useImplicitXVals();
-            plot.addSeries(rollSeriesMap.get(s), new LineAndPointFormatter(randColor(), null, null, null));
-            yawSeriesMap.put(s, new SimpleXYSeries(s));
-            yawSeriesMap.get(s).useImplicitXVals();
-            plot.addSeries(yawSeriesMap.get(s), new LineAndPointFormatter(randColor(), null, null, null));
+    private void addSignalsToPlot() {
+        //signals selected to be drawn on the signals fragment are added to the plot
+        for (String sensor : C.SENSORS) {
+            for (String signal : C.SIGNALS) {
+                if (sensorsMap.get(sensor) && signalsMap.get(signal)) {
+                    allSeriesMap.get(signal).put(sensor, new SimpleXYSeries(sensor + "-" + signal));
+                    allSeriesMap.get(signal).get(sensor).useImplicitXVals();
+                    plot.addSeries(allSeriesMap.get(signal).get(sensor), new LineAndPointFormatter(randColor(), null, null, null));
+                }
+            }
         }
+
     }
 
     private int randColor() {
@@ -304,34 +292,38 @@ public class RecordFragment extends Fragment {
         return color;
     }
 
+    private void buildSeriesMaps() {
+        allSeriesMap = new HashMap<>();
+        allSeriesMap.put(C.ACCEL_MAG, new HashMap<>());
+        allSeriesMap.put(C.ACCEL_X, new HashMap<>());
+        allSeriesMap.put(C.ACCEL_Y, new HashMap<>());
+        allSeriesMap.put(C.ACCEL_Z, new HashMap<>());
+        allSeriesMap.put(C.PITCH, new HashMap<>());
+        allSeriesMap.put(C.ROLL, new HashMap<>());
+        allSeriesMap.put(C.YAW, new HashMap<>());
+    }
+
     private void buildPointsMaps() {
-        accelMagPointsMap = new HashMap<>();
-        accelXPointsMap = new HashMap<>();
-        accelYPointsMap = new HashMap<>();
-        accelZPointsMap = new HashMap<>();
-        pitchPointsMap = new HashMap<>();
-        rollPointsMap = new HashMap<>();
-        yawPointsMap = new HashMap<>();
-        for (String s : C.KEYS) {
-            accelMagPointsMap.put(s, new ArrayList<>());
-            accelXPointsMap.put(s, new ArrayList<>());
-            accelYPointsMap.put(s, new ArrayList<>());
-            accelZPointsMap.put(s, new ArrayList<>());
-            pitchPointsMap.put(s, new ArrayList<>());
-            rollPointsMap.put(s, new ArrayList<>());
-            yawPointsMap.put(s, new ArrayList<>());
+        allPointsMap = new HashMap<>();
+        allPointsMap.put(C.ACCEL_MAG, new HashMap<>());
+        allPointsMap.put(C.ACCEL_X, new HashMap<>());
+        allPointsMap.put(C.ACCEL_Y, new HashMap<>());
+        allPointsMap.put(C.ACCEL_Z, new HashMap<>());
+        allPointsMap.put(C.PITCH, new HashMap<>());
+        allPointsMap.put(C.ROLL, new HashMap<>());
+        allPointsMap.put(C.YAW, new HashMap<>());
+
+        for (String sensor : C.SENSORS) {
+            for (String signal : C.SIGNALS) {
+                allPointsMap.get(signal).put(sensor, new ArrayList<>());
+            }
         }
 
     }
 
 
-    private boolean atLeastOneConnected() {
-        if (isConnected.get(C.LEFT_THIGH)) return true;
-        if (isConnected.get(C.LEFT_CALF)) return true;
-        if (isConnected.get(C.RIGHT_THIGH)) return true;
-        if (isConnected.get(C.RIGHT_CALF)) return true;
+    private boolean isLowerBackConnected() {
         if (isConnected.get(C.LOWER_BACK)) return true;
-
         return false;
     }
 
@@ -428,108 +420,47 @@ public class RecordFragment extends Fragment {
 
     private void reset() {
 
-        for (String s : C.KEYS) {
-            if (isConnected.get(s)) {
+        for (String sensor : C.SENSORS) {
+            for (String signal : C.SIGNALS) {
+
                 //clear points
-                accelMagPointsMap.get(s).clear();
-                accelXPointsMap.get(s).clear();
-                accelYPointsMap.get(s).clear();
-                accelZPointsMap.get(s).clear();
-                pitchPointsMap.get(s).clear();
-                rollPointsMap.get(s).clear();
-                yawPointsMap.get(s).clear();
+                allPointsMap.get(signal).get(sensor).clear();
 
                 //clear graph
-                while (accelMagSeriesMap.get(s).size() > 0) accelMagSeriesMap.get(s).removeFirst();
-                while (accelXSeriesMap.get(s).size() > 0) accelXSeriesMap.get(s).removeFirst();
-                while (accelYSeriesMap.get(s).size() > 0) accelYSeriesMap.get(s).removeFirst();
-                while (accelZSeriesMap.get(s).size() > 0) accelZSeriesMap.get(s).removeFirst();
-                while (pitchSeriesMap.get(s).size() > 0) pitchSeriesMap.get(s).removeFirst();
-                while (rollSeriesMap.get(s).size() > 0) rollSeriesMap.get(s).removeFirst();
-                while (yawSeriesMap.get(s).size() > 0) yawSeriesMap.get(s).removeFirst();
 
-
+                if (allSeriesMap.get(signal).keySet().contains(sensor)) {
+                    while (allSeriesMap.get(signal).get(sensor).size() > 0) {
+                        allSeriesMap.get(signal).get(sensor).removeFirst();
+                    }
+                }
             }
         }
-
 
         //reset index's of visible points
         indexOfFirstVisibilePoint = 0;
         plot.redraw();
 
-
     }
 
-    public void addToPoints(double value, String key, String signalType) {
+    public void addToPoints(double value, String sensor, String signal) {
 
-        switch (signalType) {
-            case C.ACCEL_MAG:
-                accelMagPointsMap.get(key).add(value);
-                if (sensorsMap.get(key) && signalsMap.get(C.ACCEL_MAG)) {
-                    if (accelMagSeriesMap.get(key).size() > SAMPLE_SIZE)
-                        accelMagSeriesMap.get(key).removeFirst();
-                    accelMagSeriesMap.get(key).addLast(null, value);
-                }
-                break;
-            case C.ACCEL_X:
-                accelXPointsMap.get(key).add(value);
-                if (sensorsMap.get(key) && signalsMap.get(C.ACCEL_X)) {
-                    if (accelXSeriesMap.get(key).size() > SAMPLE_SIZE)
-                        accelXSeriesMap.get(key).removeFirst();
-                    accelXSeriesMap.get(key).addLast(null, value);
-                }
-                break;
-            case C.ACCEL_Y:
-                accelYPointsMap.get(key).add(value);
-                if (sensorsMap.get(key) && signalsMap.get(C.ACCEL_Y)) {
-                    if (accelYSeriesMap.get(key).size() > SAMPLE_SIZE)
-                        accelYSeriesMap.get(key).removeFirst();
-                    accelYSeriesMap.get(key).addLast(null, value);
-                }
-                break;
-            case C.ACCEL_Z:
-                accelZPointsMap.get(key).add(value);
-                if (sensorsMap.get(key) && signalsMap.get(C.ACCEL_Z)) {
-                    if (accelZSeriesMap.get(key).size() > SAMPLE_SIZE)
-                        accelZSeriesMap.get(key).removeFirst();
-                    accelZSeriesMap.get(key).addLast(null, value);
-                }
-                break;
-            case C.PITCH:
-                pitchPointsMap.get(key).add(value);
-                if (sensorsMap.get(key) && signalsMap.get(C.PITCH)) {
-                    if (pitchSeriesMap.get(key).size() > SAMPLE_SIZE)
-                        pitchSeriesMap.get(key).removeFirst();
-                    pitchSeriesMap.get(key).addLast(null, value);
-                }
-                break;
-            case C.ROLL:
-                rollPointsMap.get(key).add(value);
-                if (sensorsMap.get(key) && signalsMap.get(C.ROLL)) {
-                    if (rollSeriesMap.get(key).size() > SAMPLE_SIZE)
-                        rollSeriesMap.get(key).removeFirst();
-                    rollSeriesMap.get(key).addLast(null, value);
-                }
-                break;
-            case C.YAW:
-                yawPointsMap.get(key).add(value);
-                if (sensorsMap.get(key) && signalsMap.get(C.YAW)) {
-                    if (yawSeriesMap.get(key).size() > SAMPLE_SIZE)
-                        yawSeriesMap.get(key).removeFirst();
-                    yawSeriesMap.get(key).addLast(null, value);
-                }
-                break;
+        allPointsMap.get(signal).get(sensor).add(value);
+        if (sensorsMap.get(sensor) && signalsMap.get(signal)) {
+            if (allSeriesMap.get(signal).get(sensor).size() > SAMPLE_SIZE) {
+                allSeriesMap.get(signal).get(sensor).removeFirst();
+            }
+            allSeriesMap.get(signal).get(sensor).addLast(null, value);
         }
-
         plot.redraw();
 
-
+        if (sensor.equals(C.LOWER_BACK) && signal == (C.ACCEL_MAG)) {
+            indexOfFirstVisibilePoint++;
+        }
 
     }
 
 
-
-/*    private class myTouchListener implements View.OnTouchListener {
+    private class myTouchListener implements View.OnTouchListener {
 
         @Override
         public boolean onTouch(View arg0, MotionEvent event) {
@@ -539,8 +470,6 @@ public class RecordFragment extends Fragment {
                 switch (event.getAction() & MotionEvent.ACTION_MASK) {
                     case MotionEvent.ACTION_DOWN: // Start gesture
                         firstFinger = new PointF(event.getX(), event.getY());
-                        plot.redraw();
-
                         break;
                     case MotionEvent.ACTION_UP:
                     case MotionEvent.ACTION_POINTER_UP:
@@ -555,72 +484,43 @@ public class RecordFragment extends Fragment {
                         int bar = foo - (int) minX;
                         while (bar >= 1) {
                             //left to right
-                            if (plotSize == 0 || indexOfFirstVisibilePoint <= 0)
+                            if (indexOfFirstVisibilePoint <= DRAW_SIZE) {
                                 break;
+                            }
+                            for (String sensor : C.SENSORS) {
+                                for (String signal : C.SIGNALS) {
+                                    if (isConnected.get(sensor)) {
+                                        if (signalsMap.get(signal) && sensorsMap.get(sensor)) {
+                                            Double d = allPointsMap.get(signal).get(sensor).get(indexOfFirstVisibilePoint - 1);
+                                            allSeriesMap.get(signal).get(sensor).removeLast();
+                                            allSeriesMap.get(signal).get(sensor).addFirst(null, d);
+                                        }
+                                    }
 
-                            if (isConnected.get(C.LEFT_THIGH)) {
-                                Double d = pointsMap.get(C.LEFT_THIGH).get(indexOfFirstVisibilePoint - 1);
-                                seriesMap.get(C.LEFT_THIGH).removeLast();
-                                seriesMap.get(C.LEFT_THIGH).addFirst(null, d);
+                                }
                             }
-                            if (isConnected.get(C.LEFT_CALF)) {
-                                Double d = pointsMap.get(C.LEFT_CALF).get(indexOfFirstVisibilePoint - 1);
-                                seriesMap.get(C.LEFT_CALF).removeLast();
-                                seriesMap.get(C.LEFT_CALF).addFirst(null, d);
-                            }
-                            if (isConnected.get(C.RIGHT_THIGH)) {
-                                Double d = pointsMap.get(C.RIGHT_THIGH).get(indexOfFirstVisibilePoint - 1);
-                                seriesMap.get(C.RIGHT_THIGH).removeLast();
-                                seriesMap.get(C.RIGHT_THIGH).addFirst(null, d);
-                            }
-                            if (isConnected.get(C.RIGHT_CALF)) {
-                                Double d = pointsMap.get(C.RIGHT_CALF).get(indexOfFirstVisibilePoint - 1);
-                                seriesMap.get(C.RIGHT_CALF).removeLast();
-                                seriesMap.get(C.RIGHT_CALF).addFirst(null, d);
-                            }
-                            if (isConnected.get(C.LOWER_BACK)) {
-                                Double d = pointsMap.get(C.LOWER_BACK).get(indexOfFirstVisibilePoint - 1);
-                                seriesMap.get(C.LOWER_BACK).removeLast();
-                                seriesMap.get(C.LOWER_BACK).addFirst(null, d);
-                            }
-
-
                             indexOfFirstVisibilePoint--;
                             bar--;
                         }
                         bar = foo - (int) minX;
                         while (bar <= -1) {
                             //right to left
-                            if (pointsMap.get(C.LEFT_THIGH) == null || indexOfFirstVisibilePoint + DRAW_SIZE + 1 >= pointsMap.get(C.LEFT_THIGH).size())
+                            if (indexOfFirstVisibilePoint + DRAW_SIZE + 1 >= allPointsMap.get(C.ACCEL_MAG).get(C.LOWER_BACK).size()) {
                                 break;
-
-                            if (isConnected.get(C.LEFT_THIGH)) {
-                                Double d = pointsMap.get(C.LEFT_THIGH).get(indexOfFirstVisibilePoint + DRAW_SIZE + 1);
-                                seriesMap.get(C.LEFT_THIGH).removeFirst();
-                                seriesMap.get(C.LEFT_THIGH).addLast(null, d);
-                            }
-                            if (isConnected.get(C.LEFT_CALF)) {
-                                Double d = pointsMap.get(C.LEFT_CALF).get(indexOfFirstVisibilePoint + DRAW_SIZE + 1);
-                                seriesMap.get(C.LEFT_CALF).removeFirst();
-                                seriesMap.get(C.LEFT_CALF).addLast(null, d);
-                            }
-                            if (isConnected.get(C.RIGHT_THIGH)) {
-                                Double d = pointsMap.get(C.RIGHT_THIGH).get(indexOfFirstVisibilePoint + DRAW_SIZE + 1);
-                                seriesMap.get(C.RIGHT_THIGH).removeFirst();
-                                seriesMap.get(C.RIGHT_THIGH).addLast(null, d);
-                            }
-                            if (isConnected.get(C.RIGHT_CALF)) {
-                                Double d = pointsMap.get(C.RIGHT_CALF).get(indexOfFirstVisibilePoint + DRAW_SIZE + 1);
-                                seriesMap.get(C.RIGHT_CALF).removeFirst();
-                                seriesMap.get(C.RIGHT_CALF).addLast(null, d);
-                            }
-                            if (isConnected.get(C.LOWER_BACK)) {
-                                Double d = pointsMap.get(C.LOWER_BACK).get(indexOfFirstVisibilePoint + DRAW_SIZE + 1);
-                                seriesMap.get(C.LOWER_BACK).removeFirst();
-                                seriesMap.get(C.LOWER_BACK).addLast(null, d);
                             }
 
+                            for (String sensor : C.SENSORS) {
+                                for (String signal : C.SIGNALS) {
+                                    if (isConnected.get(sensor)) {
+                                        if (signalsMap.get(signal) && sensorsMap.get(sensor)) {
+                                            Double d = allPointsMap.get(signal).get(sensor).get(indexOfFirstVisibilePoint + DRAW_SIZE + 1);
+                                            allSeriesMap.get(signal).get(sensor).removeFirst();
+                                            allSeriesMap.get(signal).get(sensor).addLast(null, d);
+                                        }
+                                    }
 
+                                }
+                            }
                             indexOfFirstVisibilePoint++;
                             bar++;
                         }
@@ -632,7 +532,7 @@ public class RecordFragment extends Fragment {
             return true;
         }
 
-    }*/
+    }
 
     @Override
     public void onPause() {
@@ -640,6 +540,7 @@ public class RecordFragment extends Fragment {
         releaseCamera();
         releaseMediaRecorder();
         surface.removeAllViews();
+
     }
 
     private void releaseCamera() {
@@ -688,25 +589,13 @@ public class RecordFragment extends Fragment {
     }
 
 
-    private void redrawShortly() {
-        Thread t = new Thread() {
-            public void run() {
-                try {
-                    sleep(300);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                plot.redraw();
-            }
-        };
-        t.start();
-    }
-
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         if (resultCode == Activity.RESULT_OK) {
             putDataInDataBase(data.getStringExtra("name"), data.getIntExtra("exercise", 0));
             Toast.makeText(getActivity(), "Added to Database", Toast.LENGTH_SHORT).show();
+            saveButton.setEnabled(false);
+            plotButton.setEnabled(true);
         } else {
             Toast.makeText(getActivity(), "Nothing Saved", Toast.LENGTH_LONG).show();
         }
@@ -718,11 +607,12 @@ public class RecordFragment extends Fragment {
         DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
         String date = dateFormat.format(new Date());
 
-        ArrayList<FlatSpot> flatSpots = RepFinder.findFlatSpots(accelMagPointsMap.get(C.LOWER_BACK)); //todo need to get lumbar
-        ArrayList<ArrayList<Double>> repsList = RepFinder.getReps(flatSpots, accelMagPointsMap.get(C.LOWER_BACK), exercise);
+        ArrayList<FlatSpot> flatSpots = RepFinder.findFlatSpots(allPointsMap.get(C.ACCEL_MAG).get(C.LOWER_BACK)); //todo need to get lumbar
         ArrayList<FilmSection> filmSections = RepFinder.getTimes(C.SAMPLE_RATE, flatSpots, storedFileName);
 
-        for (int i = 0; i < repsList.size(); i++) {
+        numberofVidsToDo = filmSections.size();
+
+        for (int i = 0; i < numberofVidsToDo; i++) {
 
             // split vid
             String newFileDir = Environment.getExternalStorageDirectory() + MEDIA_DIR;
@@ -730,74 +620,25 @@ public class RecordFragment extends Fragment {
 
             //split
             double segLength = filmSections.get(i).getLength();
-            new SplitVideo(segLength, filmSections.get(i).getStartTime(), storedFileName, date + "-rep" + i, newFileDir).execute();
+
+            new SplitVideo(segLength, filmSections.get(i).getStartTime(), storedFileName, date + "-rep" + i, newFileDir, this).execute();
 
             //split points
 
+            HashMap<String, HashMap<String, ArrayList<Double>>> choppedPoints = new HashMap<>();
 
-            HashMap<String, ArrayList<Double>> filteredAccelMag = filterAllValues(accelMagPointsMap);
-            HashMap<String, ArrayList<Double>> choppedAccelMag = new HashMap<>();
-            for (String key: C.KEYS) {
-                if (isConnected.get(key)) {
-                    ArrayList<ArrayList<Double>> tempReps = RepFinder.getReps(flatSpots, filteredAccelMag.get(key), exercise);
-                    //all reps are calc'd on the lumbars flat spots
-                    choppedAccelMag.put(key, tempReps.get(i));
+            for (String signal : C.SIGNALS) {
+                HashMap<String, ArrayList<Double>> filtered = filterAllValues(allPointsMap.get(signal));
+                choppedPoints.put(signal, new HashMap<>());
+                for (String sensor : C.SENSORS) {
+                    if (isConnected.get(sensor)) {
+                        ArrayList<ArrayList<Double>> tempReps = RepFinder.getReps(flatSpots, filtered.get(sensor), exercise);
+                        //all reps are calc'd on the lumbars/lowerbacks flat spots
+                        choppedPoints.get(signal).put(sensor, tempReps.get(i));
+                    }
                 }
             }
-            HashMap<String, ArrayList<Double>> filteredAccelX = filterAllValues(accelXPointsMap);
-            HashMap<String, ArrayList<Double>> choppedAccelX = new HashMap<>();
-            for (String key: C.KEYS) {
-                if (isConnected.get(key)) {
-                    ArrayList<ArrayList<Double>> tempReps = RepFinder.getReps(flatSpots, filteredAccelX.get(key), exercise);
-                    //all reps are calc'd on the lumbars flat spots
-                    choppedAccelX.put(key, tempReps.get(i));
-                }
-            }
-            HashMap<String, ArrayList<Double>> filteredAccelY = filterAllValues(accelYPointsMap);
-            HashMap<String, ArrayList<Double>> choppedAccelY = new HashMap<>();
-            for (String key: C.KEYS) {
-                if (isConnected.get(key)) {
-                    ArrayList<ArrayList<Double>> tempReps = RepFinder.getReps(flatSpots, filteredAccelY.get(key), exercise);
-                    //all reps are calc'd on the lumbars flat spots
-                    choppedAccelY.put(key, tempReps.get(i));
-                }
-            }
-            HashMap<String, ArrayList<Double>> filteredAccelZ = filterAllValues(accelZPointsMap);
-            HashMap<String, ArrayList<Double>> choppedAccelZ = new HashMap<>();
-            for (String key: C.KEYS) {
-                if (isConnected.get(key)) {
-                    ArrayList<ArrayList<Double>> tempReps = RepFinder.getReps(flatSpots, filteredAccelZ.get(key), exercise);
-                    //all reps are calc'd on the lumbars flat spots
-                    choppedAccelZ.put(key, tempReps.get(i));
-                }
-            }
-            HashMap<String, ArrayList<Double>> filteredPitch = filterAllValues(pitchPointsMap);
-            HashMap<String, ArrayList<Double>> choppedPitch = new HashMap<>();
-            for (String key: C.KEYS) {
-                if (isConnected.get(key)) {
-                    ArrayList<ArrayList<Double>> tempReps = RepFinder.getReps(flatSpots, filteredPitch.get(key), exercise);
-                    //all reps are calc'd on the lumbars flat spots
-                    choppedPitch.put(key, tempReps.get(i));
-                }
-            }
-            HashMap<String, ArrayList<Double>> filteredRoll = filterAllValues(rollPointsMap);
-            HashMap<String, ArrayList<Double>> choppedRoll = new HashMap<>();
-            for (String key: C.KEYS) {
-                if (isConnected.get(key)) {
-                    ArrayList<ArrayList<Double>> tempReps = RepFinder.getReps(flatSpots, filteredRoll.get(key), exercise);
-                    //all reps are calc'd on the lumbars flat spots
-                    choppedRoll.put(key, tempReps.get(i));
-                }
-            }
-            HashMap<String, ArrayList<Double>> filteredYaw = filterAllValues(yawPointsMap);
-            HashMap<String, ArrayList<Double>> choppedYaw = new HashMap<>();
-            for (String key: C.KEYS) {
-                if (isConnected.get(key)) {
-                    ArrayList<ArrayList<Double>> tempReps = RepFinder.getReps(flatSpots, filteredYaw.get(key), exercise);
-                    //all reps are calc'd on the lumbars flat spots
-                    choppedYaw.put(key, tempReps.get(i));
-                }
-            }
+
 
             //pop in db
             Detail d = new Detail();
@@ -806,21 +647,31 @@ public class RecordFragment extends Fragment {
             d.setVideoFile(newFile);
             d.setLabel(0);
             d.setExercise(exercise);
-            d.setAccelMagPoints(choppedAccelMag);
-            d.setAccelXPoints(choppedAccelX);
-            d.setAccelYPoints(choppedAccelY);
-            d.setAccelZPoints(choppedAccelZ);
-            d.setPitchPoints(choppedPitch);
-            d.setRollPoints(choppedRoll);
-            d.setYawPoints(choppedYaw);
+            d.setAccelMagPoints(choppedPoints.get(C.ACCEL_MAG));
+            d.setAccelXPoints(choppedPoints.get(C.ACCEL_X));
+            d.setAccelYPoints(choppedPoints.get(C.ACCEL_Y));
+            d.setAccelZPoints(choppedPoints.get(C.ACCEL_Z));
+            d.setPitchPoints(choppedPoints.get(C.PITCH));
+            d.setRollPoints(choppedPoints.get(C.ROLL));
+            d.setYawPoints(choppedPoints.get(C.YAW));
             d.setRep(i + 1);
 
             db.addDetail(d);
         }
+    }
 
-        //at this point, all data is in db,,, can delete orginal file :/ eek
-        File file = new File(storedFileName);
-        file.delete();
+    @Override
+    public void onVideoSplitComplete() {
+
+        //this is called from the vidSplitter,,, and only deletes the orginal video file when finished with it,
+        numberOfVidsDone++;
+        Log.d("vidCallback", "#done: " + numberOfVidsDone + "\t #todo: " + numberofVidsToDo);
+        if (numberOfVidsDone == numberofVidsToDo) {
+            Log.d("delete", "deleting " + storedFileName);
+            File file = new File(storedFileName);
+            file.delete();
+            numberOfVidsDone = 0;
+        }
 
     }
 
@@ -828,11 +679,7 @@ public class RecordFragment extends Fragment {
 
         HashMap<String, ArrayList<Double>> filteredVals = new HashMap<>();
 
-        Iterator<String> it = pointsMap.keySet().iterator();
-        while (it.hasNext()) {
-
-            //make new arraylist for the filtered points
-            String key = it.next();
+        for (String key : C.SENSORS) {
             ArrayList<Double> foo = new ArrayList<>();
 
             //filter points
@@ -856,6 +703,5 @@ public class RecordFragment extends Fragment {
 
         return filteredVals;
     }
-
 
 }

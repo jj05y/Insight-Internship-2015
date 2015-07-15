@@ -11,6 +11,7 @@ import com.googlecode.mp4parser.authoring.builder.DefaultMp4Builder;
 import com.googlecode.mp4parser.authoring.container.mp4.MovieCreator;
 import com.googlecode.mp4parser.authoring.tracks.AppendTrack;
 import com.googlecode.mp4parser.authoring.tracks.CroppedTrack;
+import com.shimmerresearch.MultiShimmerRecordReview.Interfaces.VideoSplitCallBackListener;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,14 +29,16 @@ public class SplitVideo extends AsyncTask<String, Integer, String> {
     private double endTime;
     private double length;
     private String newfileDir;
+    private VideoSplitCallBackListener videoSplitCallBackListener;
 
-    public SplitVideo(double length, double startTime, String mediaPath, String newFileName, String newFileDir) {
+    public SplitVideo(double length, double startTime, String mediaPath, String newFileName, String newFileDir, VideoSplitCallBackListener videoSplitCallBackListener) {
         this.length = length;
         this.startTime = startTime;
         this.mediaPath = mediaPath;
         this.newFileName = newFileName;
         this.endTime = this.startTime + this.length;
         this.newfileDir = newFileDir;
+        this.videoSplitCallBackListener = videoSplitCallBackListener;
     }
 
     @Override
@@ -52,6 +55,7 @@ public class SplitVideo extends AsyncTask<String, Integer, String> {
 
     @Override
     protected void onPostExecute(String result) {
+        videoSplitCallBackListener.onVideoSplitComplete();
         super.onPostExecute(result);
     }
 

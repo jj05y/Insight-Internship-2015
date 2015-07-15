@@ -34,6 +34,8 @@
             android:name="com.shimmerresearch.MultiShimmerRecordReview.Activities.SaveDialog"
             android:label="SaveDialog"
             android:theme="@android:style/Theme.Dialog"/>
+        <activity android:name="com.shimmerresearch.MultiShimmerRecordReview.Activities.ConfirmDeleteDialog"
+            android:theme="@android:style/Theme.Dialog"/>
 
 
     </application>

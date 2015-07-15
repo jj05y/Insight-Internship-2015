@@ -201,12 +201,6 @@ public class ConnectFragment extends Fragment {
                             Toast.makeText(getActivity(), "Connecting: " + addresses.get(key), Toast.LENGTH_SHORT).show();
                             shimmers.get(key).connect(addresses.get(key), "default");
                             setButtonTexts();
-                        } else {
-                            //todo sort this,,, disconnect connected whien connecting some
-                            //shimmers.get(key).stop();
-                            //isConnected.put(key, false);
-                            //setButtonTexts();
-                            //redrawLocalIndicators();
                         }
                     }
                 }
@@ -226,7 +220,6 @@ public class ConnectFragment extends Fragment {
                     isConnected.put(key, false);
                     setButtonTexts();
                     redrawLocalIndicators();
-                    //  }
                 }
             }
         });

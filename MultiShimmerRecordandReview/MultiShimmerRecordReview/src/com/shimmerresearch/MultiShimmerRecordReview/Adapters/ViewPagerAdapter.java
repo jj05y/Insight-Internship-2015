@@ -25,13 +25,15 @@ import android.widget.VideoView;
 import com.androidplot.ui.SizeLayoutType;
 import com.androidplot.ui.SizeMetrics;
 import com.androidplot.util.PixelUtils;
+import com.androidplot.xy.BarFormatter;
+import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.XYPlot;
 import com.shimmerresearch.MultiShimmerRecordReview.Constants.C;
+import com.shimmerresearch.MultiShimmerRecordReview.DatabaseClasses.DatabaseHandler;
 import com.shimmerresearch.MultiShimmerRecordReview.Interfaces.Linker;
 import com.shimmerresearch.MultiShimmerRecordReview.ListItems.ItemForReview;
-import com.shimmerresearch.MultiShimmerRecordReview.DatabaseClasses.DatabaseHandler;
 import com.shimmerresearch.multishimmerrecordreview.R;
 
 import java.io.IOException;
@@ -46,17 +48,8 @@ public class ViewPagerAdapter extends PagerAdapter {
 
     private ArrayList<ItemForReview> things;
     private Context context;
-    private final static int SAMPLE_SIZE = 30;
-    private final static int DRAW_SIZE = SAMPLE_SIZE + 6;
-    private XYPlot plot;
-    private HashMap<String, SimpleXYSeries> accelMagSeriesMap;
-    private HashMap<String, SimpleXYSeries> accelXSeriesMap;
-    private HashMap<String, SimpleXYSeries> accelYSeriesMap;
-    private HashMap<String, SimpleXYSeries> accelZSeriesMap;
-    private HashMap<String, SimpleXYSeries> pitchSeriesMap;
-    private HashMap<String, SimpleXYSeries> rollSeriesMap;
-    private HashMap<String, SimpleXYSeries> yawSeriesMap;
     //private HashMap<String, LineAndPointFormatter> formatterMap;
+
     private DatabaseHandler db;
     private boolean readyToPlayVid;
     private MediaPlayer mp;
@@ -68,6 +61,9 @@ public class ViewPagerAdapter extends PagerAdapter {
     private Linker linker;
     Random rand;
 
+    private boolean paused;
+    private boolean notStarted;
+    private boolean finished;
 
 
     public ViewPagerAdapter(ArrayList<ItemForReview> itemsForReview, Context context, DatabaseHandler db, String reviewType) {
@@ -80,7 +76,6 @@ public class ViewPagerAdapter extends PagerAdapter {
         linker = (Linker) context;
         rand = new Random();
     }
-
 
 
     @Override
@@ -102,13 +97,16 @@ public class ViewPagerAdapter extends PagerAdapter {
 
         //get things from things
         String name = things.get(position).getName();
-        HashMap<String, ArrayList<Double>> accelMagPoints = things.get(position).getAccelMagPoints();
-        HashMap<String, ArrayList<Double>> accelXPoints = things.get(position).getAccelXPoints();
-        HashMap<String, ArrayList<Double>> accelYPoints = things.get(position).getAccelYPoints();
-        HashMap<String, ArrayList<Double>> accelZPoints = things.get(position).getAccelZPoints();
-        HashMap<String, ArrayList<Double>> pitchPoints = things.get(position).getPitchPoints();
-        HashMap<String, ArrayList<Double>> rollPoints = things.get(position).getRollPoints();
-        HashMap<String, ArrayList<Double>> yawPoints = things.get(position).getYawPoints();
+
+        HashMap<String, HashMap<String, ArrayList<Double>>> allPointsMap = new HashMap<>();
+        allPointsMap.put(C.ACCEL_MAG, things.get(position).getAccelMagPoints());
+        allPointsMap.put(C.ACCEL_X, things.get(position).getAccelXPoints());
+        allPointsMap.put(C.ACCEL_Y, things.get(position).getAccelYPoints());
+        allPointsMap.put(C.ACCEL_Z, things.get(position).getAccelZPoints());
+        allPointsMap.put(C.PITCH, things.get(position).getPitchPoints());
+        allPointsMap.put(C.ROLL, things.get(position).getRollPoints());
+        allPointsMap.put(C.YAW, things.get(position).getYawPoints());
+
         String fileName = things.get(position).getFileName();
         int label = things.get(position).getLabel();
         Log.d("spinner", "label comin outa db as " + C.LABELS[label]);
@@ -124,11 +122,15 @@ public class ViewPagerAdapter extends PagerAdapter {
         TextView nameText = (TextView) myInflatedView.findViewById(R.id.text_new_review_name);
         nameText.setText(name + " - Rep: " + rep);
 
-        // exercise spinner
+        /*// exercise spinner - replaced by textView
         Spinner exerciseSpinner = (Spinner) myInflatedView.findViewById(R.id.exercise_spinner);
         ArrayAdapter<String> exerciseSpinnerAdapter = new ArrayAdapter<String>(context, android.R.layout.simple_spinner_dropdown_item, C.EXERCISES);
         exerciseSpinner.setAdapter(exerciseSpinnerAdapter);
-        exerciseSpinner.setSelection(exercise);
+        exerciseSpinner.setSelection(exercise);*/
+
+        //exerciseText
+        TextView exerciseText = (TextView) myInflatedView.findViewById(R.id.text_exercise_text);
+        exerciseText.setText(C.EXERCISES[exercise]);
 
         // label spinner
         Spinner labelSpinner = (Spinner) myInflatedView.findViewById(R.id.label_spinner);
@@ -155,6 +157,7 @@ public class ViewPagerAdapter extends PagerAdapter {
 
             }
         });
+        /*
         exerciseSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
@@ -174,7 +177,7 @@ public class ViewPagerAdapter extends PagerAdapter {
 
             }
         });
-
+*/
 
         //video view :/ eugh mayb just start looping? not on creation, wouldnt work,,, hmm,
 
@@ -207,50 +210,69 @@ public class ViewPagerAdapter extends PagerAdapter {
             }
         });
 
-        videoView.setOnTouchListener(new VideoView.OnTouchListener(){
+
+        HashMap<String, HashMap<String, SimpleXYSeries>> allSeriesMap = new HashMap<>();
+        allSeriesMap.put(C.ACCEL_MAG, new HashMap<>());
+        allSeriesMap.put(C.ACCEL_X, new HashMap<>());
+        allSeriesMap.put(C.ACCEL_Y, new HashMap<>());
+        allSeriesMap.put(C.ACCEL_Z, new HashMap<>());
+        allSeriesMap.put(C.PITCH, new HashMap<>());
+        allSeriesMap.put(C.ROLL, new HashMap<>());
+        allSeriesMap.put(C.YAW, new HashMap<>());
+
+        XYPlot plot = (XYPlot) myInflatedView.findViewById(R.id.new_review_plot);
+
+        paused = false;
+        notStarted = true;
+        finished = false;
+
+        videoView.setOnTouchListener(new VideoView.OnTouchListener() {
 
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 switch (motionEvent.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        if (readyToPlayVid) {
-                            videoView.setBackground(null);
-                            Log.d("surfaceTesting", "Boom");
-                            mp.reset();
-                            try {
-                                Log.d("storage", "from viewpageradapter: " + fileName);
-                                mp.setDataSource(fileName);
-
-                                mp.setDisplay(vidHolder);
-                                mp.prepare();
-                                mp.start();
-
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                        mp.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                            @Override
+                            public void onCompletion(MediaPlayer mediaPlayer) {
+                                finished = true;
                             }
+                        });
+                        if (notStarted) {
+                            if (readyToPlayVid) {
+                                notStarted = false;
+                                //animateGraph(allPointsMap, allSeriesMap, plot);
+                                animateCursor(plot);
+                                videoView.setBackground(null);
+                                Log.d("surfaceTesting", "Boom");
+                                mp.reset();
+                                try {
+                                    Log.d("storage", "from viewpageradapter: " + fileName);
+                                    mp.setDataSource(fileName);
+
+                                    mp.setDisplay(vidHolder);
+                                    mp.prepare();
+                                    mp.start();
+
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        } else if (finished) {
+                            animateCursor(plot);
+                            mp.start();
+                            finished = false;
+                        } else if (!paused) {
+                            mp.pause();
+                            paused = true;
+                        } else if (paused) {
+                            mp.start();
+                            paused = false;
                         }
                 }
                 return false;
             }
         });
-
-
-        //todo ----------- :|
-
-
-        //plot,,, also need to make the plot scroll with vid,,, hmm,,
-
-
-        plot = (XYPlot) myInflatedView.findViewById(R.id.new_review_plot);
-        accelMagSeriesMap = new HashMap<>();
-        accelXSeriesMap = new HashMap<>();
-        accelYSeriesMap = new HashMap<>();
-        accelZSeriesMap = new HashMap<>();
-        pitchSeriesMap = new HashMap<>();
-        rollSeriesMap = new HashMap<>();
-        yawSeriesMap = new HashMap<>();
-        //plot.setRangeBoundaries(0, 20, BoundaryMode.FIXED);
-        //plot.setDomainBoundaries(0, 35, BoundaryMode.FIXED);
 
         plot.setDomainValueFormat(new DecimalFormat("#"));
 
@@ -275,72 +297,124 @@ public class ViewPagerAdapter extends PagerAdapter {
 */
 
 
-
-        for (String key: C.KEYS) {
-            if (signalsMap.get(C.ACCEL_MAG) && sensorsMap.get(key)) {
-                accelMagSeriesMap.put(key, new SimpleXYSeries(C.ACCEL_MAG));
-                accelMagSeriesMap.get(key).useImplicitXVals();
-                for (double d: accelMagPoints.get(key)){
-                    accelMagSeriesMap.get(key).addLast(null, d);
+        for (String sensor : C.SENSORS) {
+            for (String signal : C.SIGNALS) {
+                if (signalsMap.get(signal) && sensorsMap.get(sensor)) {
+                    allSeriesMap.get(signal).put(sensor, new SimpleXYSeries(sensor + " - " + signal));
+                    allSeriesMap.get(signal).get(sensor).useImplicitXVals();
+                    if (allPointsMap.get(signal).get(sensor)!= null) {
+                        for (double d : allPointsMap.get(signal).get(sensor)) {
+                            allSeriesMap.get(signal).get(sensor).addLast(null, d);
+                        }
+                        plot.addSeries(allSeriesMap.get(signal).get(sensor), new LineAndPointFormatter(randColor(), null, null, null));
+                    }
                 }
-                plot.addSeries(accelMagSeriesMap.get(key), new LineAndPointFormatter(randColor(), null, null, null));
             }
-            if (signalsMap.get(C.ACCEL_X) && sensorsMap.get(key)) {
-                accelXSeriesMap.put(key, new SimpleXYSeries(C.ACCEL_X));
-                accelXSeriesMap.get(key).useImplicitXVals();
-                for (double d: accelXPoints.get(key)){
-                    accelXSeriesMap.get(key).addLast(null, d);
-                }
-                plot.addSeries(accelXSeriesMap.get(key), new LineAndPointFormatter(randColor(), null, null, null));
-            }
-            if (signalsMap.get(C.ACCEL_Y) && sensorsMap.get(key)) {
-                accelYSeriesMap.put(key, new SimpleXYSeries(C.ACCEL_Y));
-                accelYSeriesMap.get(key).useImplicitXVals();
-                for (double d: accelYPoints.get(key)){
-                    accelYSeriesMap.get(key).addLast(null, d);
-                }
-                plot.addSeries(accelYSeriesMap.get(key), new LineAndPointFormatter(randColor(), null, null, null));
-            }
-            if (signalsMap.get(C.ACCEL_Z) && sensorsMap.get(key)) {
-                accelZSeriesMap.put(key, new SimpleXYSeries(C.ACCEL_Z));
-                accelZSeriesMap.get(key).useImplicitXVals();
-                for (double d: accelZPoints.get(key)){
-                    accelZSeriesMap.get(key).addLast(null, d);
-                }
-                plot.addSeries(accelZSeriesMap.get(key), new LineAndPointFormatter(randColor(), null, null, null));
-            }
-            if (signalsMap.get(C.PITCH) && sensorsMap.get(key)) {
-                pitchSeriesMap.put(key, new SimpleXYSeries(C.PITCH));
-                pitchSeriesMap.get(key).useImplicitXVals();
-                for (double d: pitchPoints.get(key)){
-                    pitchSeriesMap.get(key).addLast(null, d);
-                }
-                plot.addSeries(pitchSeriesMap.get(key), new LineAndPointFormatter(randColor(), null, null, null));
-            }
-            if (signalsMap.get(C.ROLL) && sensorsMap.get(key)) {
-                rollSeriesMap.put(key, new SimpleXYSeries(C.ROLL));
-                rollSeriesMap.get(key).useImplicitXVals();
-                for (double d: rollPoints.get(key)){
-                    rollSeriesMap.get(key).addLast(null, d);
-                }
-                plot.addSeries(rollSeriesMap.get(key), new LineAndPointFormatter(randColor(), null, null, null));
-            }
-            if (signalsMap.get(C.YAW) && sensorsMap.get(key)) {
-                yawSeriesMap.put(key, new SimpleXYSeries(C.YAW));
-                yawSeriesMap.get(key).useImplicitXVals();
-                for (double d: yawPoints.get(key)){
-                    yawSeriesMap.get(key).addLast(null, d);
-                }
-                plot.addSeries(yawSeriesMap.get(key), new LineAndPointFormatter(randColor(), null, null, null));
-            }
-
         }
         plot.redraw();
 
 
-
         container.addView(myInflatedView);
         return myInflatedView;
+
+    }
+
+    private void animateGraph(HashMap<String, HashMap<String, ArrayList<Double>>> allPointsMap, HashMap<String, HashMap<String, SimpleXYSeries>> allSeriesMap, XYPlot plot) {
+
+        //set domain and range boundries
+        int plotSize = allPointsMap.get(C.ACCEL_MAG).get(C.LOWER_BACK).size();
+        plot.setDomainBoundaries(0, plotSize, BoundaryMode.FIXED);
+
+        plot.calculateMinMaxVals();
+        plot.setRangeBoundaries(plot.getCalculatedMinY(), plot.getCalculatedMaxY(), BoundaryMode.FIXED);
+
+        //clear graph
+        for (String sensor : C.SENSORS) {
+            for (String signal : C.SIGNALS) {
+                if (signalsMap.get(signal) && sensorsMap.get(sensor)) {
+                    while (allSeriesMap.get(signal).get(sensor).size() > 0) {
+                        allSeriesMap.get(signal).get(sensor).removeFirst();
+                    }
+                }
+            }
+        }
+        plot.redraw();
+
+
+        //put points in one by one,
+        new Thread() {
+
+            private int size = plotSize;
+            private int initialDelay = 2400;
+            private int delayMilli = 19;
+            private int delayNano = 531250;
+
+
+            public void run() {
+                try {
+                    sleep(initialDelay);
+                    for (int i = 0; i < size; i++) {
+                        for (String sensor : C.SENSORS) {
+                            for (String signal : C.SIGNALS) {
+                                if (allPointsMap.get(signal).get(sensor) != null) {
+                                    if (signalsMap.get(signal) && sensorsMap.get(sensor)) {
+                                        allSeriesMap.get(signal).get(sensor).addLast(null, allPointsMap.get(signal).get(sensor).get(i));
+                                    }
+                                }
+                            }
+                        }
+                        plot.redraw();
+                    }
+                    sleep(delayMilli, delayNano);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+    }.start();
+
+
+}
+
+    private void animateCursor(XYPlot plot) {
+        plot.calculateMinMaxVals();
+        double barHeight = (double) plot.getCalculatedMaxY();
+        int plotSize = (int) plot.getCalculatedMaxX();
+        SimpleXYSeries bar = new SimpleXYSeries("");
+        plot.addSeries(bar, new BarFormatter(randColor(), randColor()));
+
+        new Thread() {
+
+            private int size = plotSize;
+            double bh = barHeight;
+            private int initialDelay = 1570;
+            private int delayMilli = 18;
+            private int delayNano = 531250;
+
+            public void run() {
+                try {
+                    sleep(initialDelay);
+                    for (int i = 0; i < size; i++) {
+                        bar.addFirst(i, bh);
+                        plot.redraw();
+
+                        while (paused) {
+                            sleep(delayMilli, delayNano);
+                        }
+
+                        sleep(delayMilli, delayNano);
+
+                        bar.removeFirst();
+                        plot.redraw();
+                    }
+                } catch (InterruptedException e) {
+                    Log.d("thread", "thread crapped itself");
+                }
+                plot.removeSeries(bar);
+
+            }
+        }.start();
+
 
     }
 
@@ -359,6 +433,9 @@ public class ViewPagerAdapter extends PagerAdapter {
         if (mp.isPlaying()) {
             mp.stop();
         }
+        paused = false;
+        notStarted = true;
+        finished = false;
     }
 
 

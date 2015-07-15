@@ -1,33 +1,36 @@
 package com.shimmerresearch.MultiShimmerRecordReview.Adapters;
 
+import android.app.Fragment;
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.shimmerresearch.MultiShimmerRecordReview.Activities.ConfirmDeleteDialog;
+import com.shimmerresearch.MultiShimmerRecordReview.Activities.MainActivity;
 import com.shimmerresearch.MultiShimmerRecordReview.ListItems.Row;
-import com.shimmerresearch.MultiShimmerRecordReview.DatabaseClasses.DatabaseHandler;
 import com.shimmerresearch.multishimmerrecordreview.R;
 
-import java.io.File;
 import java.util.ArrayList;
 
 
 public class ManageDBAdapter extends BaseAdapter {
 
+    public static final int CONFIRM_DELETE = 7;
     private Context context;
     private ArrayList<Row> rows;
-    private DatabaseHandler db;
+    Fragment parentFrag;
 
-    public ManageDBAdapter(Context context, ArrayList<Row> rows, DatabaseHandler db) {
-        this.rows = rows;
+    public ManageDBAdapter(Context context, ArrayList<Row> rows, Fragment parentFrag) {
         this.context = context;
-        this.db = db;
+        this.rows = rows;
+        this.parentFrag = parentFrag;
     }
+
 
     @Override
     public int getCount() {
@@ -66,18 +69,24 @@ public class ManageDBAdapter extends BaseAdapter {
             @Override
             public void onClick(View view) {
                 //delete the row and file,
-                db.deleteDetail(rows.get(pos).getRowID());
-                File file = new File(rows.get(pos).getFileName());
-                file.delete();
-                Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show();
 
-                //updata the list
-                rows = db.getRowStrings();
-                notifyDataSetChanged();
+                Intent i = new Intent(context, ConfirmDeleteDialog.class);
+                i.putExtra("pos", pos);
+                parentFrag.startActivityForResult(i, CONFIRM_DELETE);
+
+
+
             }
         });
 
 
         return myInflatedView;
     }
+
+    public void updateRows(ArrayList<Row> rows) {
+        this.rows = rows;
+        notifyDataSetChanged();
+    }
+
+
 }

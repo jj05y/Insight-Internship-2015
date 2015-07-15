@@ -10,9 +10,7 @@ import com.shimmerresearch.MultiShimmerRecordReview.ObjectClasses.FlatSpot;
 import java.io.IOException;
 import java.util.ArrayList;
 
-/**
- * Created by joe on 02/07/15.
- */
+
 public class RepFinder {
 
     private static int REACH = 20;
@@ -20,7 +18,7 @@ public class RepFinder {
     private static double LOWER_BOUND = 9.6;
     private static int END_CHOP = REACH + 2;
     private static int REP_START_STRETCH = 10;
-    private static int REP_END_STRETCH = 15;
+    private static int REP_END_STRETCH = 20;
     private static double FILM_STRETCH = 1;
     private static double FILM_DELAY = 2.5;
 

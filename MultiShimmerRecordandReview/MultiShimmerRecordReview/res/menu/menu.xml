@@ -8,41 +8,7 @@
         android:icon="@drawable/ic_settings"
         android:title="Settings"
         />
-   <!-- <item
-        android:id="@+id/left_thigh_indicator"
-        android:orderInCategory="50"
-        android:showAsAction="always"
-        android:icon="@drawable/ic_redcircle"
-        android:title="LeftThighIndicator"
-        />
-    <item
-        android:id="@+id/left_calf_indicator"
-        android:orderInCategory="50"
-        android:showAsAction="always"
-        android:icon="@drawable/ic_redcircle"
-        android:title="LeftThighIndicator"
-        />
-    <item
-        android:id="@+id/right_thigh_indicator"
-        android:orderInCategory="60"
-        android:showAsAction="always"
-        android:icon="@drawable/ic_redcircle"
-        android:title="LeftThighIndicator"
-        />
-    <item
-        android:id="@+id/right_calf_indicator"
-        android:orderInCategory="70"
-        android:showAsAction="always"
-        android:icon="@drawable/ic_redcircle"
-        android:title="LeftThighIndicator"
-        />
-    <item
-        android:id="@+id/lower_back_indicator"
-        android:orderInCategory="80"
-        android:showAsAction="always"
-        android:icon="@drawable/ic_redcircle"
-        android:title="LeftThighIndicator"
-        />-->
+
 
 
 </menu>

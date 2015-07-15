@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -23,15 +24,15 @@ import android.widget.Toast;
 
 import com.shimmerresearch.MultiShimmerRecordReview.Adapters.DrawerListAdapter;
 import com.shimmerresearch.MultiShimmerRecordReview.Constants.C;
+import com.shimmerresearch.MultiShimmerRecordReview.DatabaseClasses.DatabaseHandler;
+import com.shimmerresearch.MultiShimmerRecordReview.Fragments.ChooseSignalsFragment;
 import com.shimmerresearch.MultiShimmerRecordReview.Fragments.ConnectFragment;
 import com.shimmerresearch.MultiShimmerRecordReview.Fragments.ManageDBFragment;
 import com.shimmerresearch.MultiShimmerRecordReview.Fragments.RecordFragment;
 import com.shimmerresearch.MultiShimmerRecordReview.Fragments.ReviewByExLabelFragment;
 import com.shimmerresearch.MultiShimmerRecordReview.Fragments.ReviewByNameFragment;
-import com.shimmerresearch.MultiShimmerRecordReview.Fragments.ChooseSignalsFragment;
 import com.shimmerresearch.MultiShimmerRecordReview.Interfaces.Linker;
 import com.shimmerresearch.MultiShimmerRecordReview.ListItems.NavItem;
-import com.shimmerresearch.MultiShimmerRecordReview.DatabaseClasses.DatabaseHandler;
 import com.shimmerresearch.android.Shimmer;
 import com.shimmerresearch.driver.Configuration;
 import com.shimmerresearch.driver.FormatCluster;
@@ -41,8 +42,6 @@ import com.shimmerresearch.multishimmerrecordreview.R;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Quat4d;
@@ -60,7 +59,7 @@ public class MainActivity extends Activity implements Linker {
     private ReviewByNameFragment reviewByNameFragment;
     private ReviewByExLabelFragment reviewByExLabelFragment;
     private ManageDBFragment manageDBFragment;
-
+    private Fragment settingsFragment;
 
     ArrayList<NavItem> navItems;
     private HashMap<String, String> addressesMap;
@@ -71,11 +70,6 @@ public class MainActivity extends Activity implements Linker {
 
     private DatabaseHandler db;
     private boolean isPlotting;
-    private Fragment settingsFragment;
-
-
-    //private HashMap<String, MenuItem> menuIndicators;
-
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -165,7 +159,6 @@ public class MainActivity extends Activity implements Linker {
         plotSignalsMap.put(C.YAW, false);
 
 
-
     }
 
 
@@ -178,18 +171,14 @@ public class MainActivity extends Activity implements Linker {
         isConnectedMap.put(C.LOWER_BACK, false);
 
     }
-
+// C.SAMPLE_RATE, 0, 4, ,
 
     private void createShimmerMap() {
         shimmersMap = new HashMap<>();
-        shimmersMap.put(C.LEFT_THIGH, new Shimmer(this, mHandler, C.LEFT_THIGH, C.SAMPLE_RATE, 0, 4, Shimmer.SENSOR_ACCEL|Shimmer.SENSOR_GYRO|Shimmer.SENSOR_MAG, true));
-        shimmersMap.put(C.LEFT_CALF, new Shimmer(this, mHandler, C.LEFT_CALF, C.SAMPLE_RATE, 0, 4, Shimmer.SENSOR_ACCEL|Shimmer.SENSOR_GYRO|Shimmer.SENSOR_MAG, true));
-        shimmersMap.put(C.RIGHT_THIGH, new Shimmer(this, mHandler, C.RIGHT_THIGH, C.SAMPLE_RATE, 0, 4, Shimmer.SENSOR_ACCEL|Shimmer.SENSOR_GYRO|Shimmer.SENSOR_MAG, true));
-        shimmersMap.put(C.RIGHT_CALF, new Shimmer(this, mHandler, C.RIGHT_CALF, C.SAMPLE_RATE, 0, 4, Shimmer.SENSOR_ACCEL|Shimmer.SENSOR_GYRO|Shimmer.SENSOR_MAG, true));
-        shimmersMap.put(C.LOWER_BACK, new Shimmer(this, mHandler, C.LOWER_BACK, C.SAMPLE_RATE, 0, 4, Shimmer.SENSOR_ACCEL|Shimmer.SENSOR_GYRO|Shimmer.SENSOR_MAG, true));
-        for (String key: C.KEYS) {
-            shimmersMap.get(key).enableOnTheFlyGyroCal(true, 102, 1.2);
-            shimmersMap.get(key).enable3DOrientation(true);
+        for (String sensor : C.SENSORS) {
+            shimmersMap.put(sensor, new Shimmer(this, handler, sensor, C.SAMPLE_RATE, C.ACCEL_RANGE, C.GSR_RANGE, Shimmer.SENSOR_ACCEL | Shimmer.SENSOR_GYRO | Shimmer.SENSOR_MAG, true, false, false, false, C.GYRO_RANGE, C.MAG_RANGE));
+            shimmersMap.get(sensor).enableOnTheFlyGyroCal(true, 102, 1.2);
+            shimmersMap.get(sensor).enable3DOrientation(true);
         }
     }
 
@@ -256,19 +245,9 @@ public class MainActivity extends Activity implements Linker {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
-
-
         return true;
     }
 
-/*    private void createMenuIndicators(Menu menu) {
-        menuIndicators = new HashMap<>();
-        menuIndicators.put(ConnectFragment.LEFT_THIGH, (MenuItem) menu.findItem(R.id.left_thigh_indicator));
-        menuIndicators.put(ConnectFragment.LEFT_CALF, (MenuItem) menu.findItem(R.id.left_calf_indicator));
-        menuIndicators.put(ConnectFragment.RIGHT_THIGH, menu.findItem(R.id.right_thigh_indicator));
-        menuIndicators.put(ConnectFragment.RIGHT_CALF, menu.findItem(R.id.right_calf_indicator));
-        menuIndicators.put(ConnectFragment.LOWER_BACK, menu.findItem(R.id.lower_back_indicator));
-    }*/
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
@@ -321,6 +300,7 @@ public class MainActivity extends Activity implements Linker {
         return plotSignalsMap;
     }
 
+
     public void getSavedSensorAddresses() {
 
         SharedPreferences savedAddresses = getPreferences(Context.MODE_PRIVATE);
@@ -356,8 +336,27 @@ public class MainActivity extends Activity implements Linker {
 
     }
 
+    @Override
+    protected void onResume() {
+        //todo,,, verify sensors
+        Log.d("resume", "resuming");
 
-    private final Handler mHandler = new Handler() {
+
+        super.onResume();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (drawerLayout.isDrawerOpen(drawerPane)) {
+            super.onBackPressed();
+        } else {
+            Toast.makeText(this, "Press Back Again To Exit", Toast.LENGTH_SHORT).show();
+            drawerLayout.openDrawer(drawerPane);
+        }
+    }
+
+    //handler re-write without loop :) phwaar if this works! #ballsy -
+    private final Handler handler = new Handler() {
 
 
         @SuppressWarnings("null")
@@ -369,170 +368,127 @@ public class MainActivity extends Activity implements Linker {
 
             if ((msg.obj instanceof ObjectCluster)) {    // within each msg an object can be include, objectclusters are used to represent the data structure of the leftThighShimmer device
                 ObjectCluster objectCluster = (ObjectCluster) msg.obj;
+                String sensor = objectCluster.mMyName;
+                //we're dealing with sensor "sensor" :)
+                shimmer = shimmersMap.get(sensor);
+                switch (msg.what) { // handlers have a what identifier which is used to identify the type of msg
+                    case Shimmer.MESSAGE_READ:
+
+                        Collection<FormatCluster> accelXFormats = objectCluster.mPropertyCluster.get("Low Noise Accelerometer X");  // first retrieve all the possible formats for the current sensor device
+                        FormatCluster formatCluster = ObjectCluster.returnFormatCluster(accelXFormats, "CAL"); // retrieve the calibrated data
+                        if (formatCluster != null) {
+                            if (isPlotting)
+                                recordFragment.addToPoints(formatCluster.mData, sensor, C.ACCEL_X);
+                            magArr[0] = formatCluster.mData * formatCluster.mData;
+                        }
+
+                        Collection<FormatCluster> accelYFormats = objectCluster.mPropertyCluster.get("Low Noise Accelerometer Y");  // first retrieve all the possible formats for the current sensor device
+                        formatCluster = ObjectCluster.returnFormatCluster(accelYFormats, "CAL"); // retrieve the calibrated data
+                        if (formatCluster != null) {
+                            if (isPlotting)
+                                recordFragment.addToPoints(formatCluster.mData, sensor, C.ACCEL_Y);
+                            magArr[1] = formatCluster.mData * formatCluster.mData;
+                        }
+
+                        Collection<FormatCluster> accelZFormats = objectCluster.mPropertyCluster.get("Low Noise Accelerometer Z");  // first retrieve all the possible formats for the current sensor device
+                        formatCluster = ObjectCluster.returnFormatCluster(accelZFormats, "CAL"); // retrieve the calibrated data
+                        if (formatCluster != null) {
+                            if (isPlotting)
+                                recordFragment.addToPoints(formatCluster.mData, sensor, C.ACCEL_Z);
+                            magArr[2] = formatCluster.mData * formatCluster.mData;
+                        }
+
+                        mag = Math.sqrt(magArr[0] + magArr[1] + magArr[2]);
+                        if (isPlotting) recordFragment.addToPoints(mag, sensor, C.ACCEL_MAG);
 
 
-                Iterator<Map.Entry<String, String>> it = addressesMap.entrySet().iterator();
-                while (it.hasNext()) {
-                    Map.Entry<String, String> e = it.next();
-                    String key = e.getKey();
-                    String addr = e.getValue();
-                    if (objectCluster.mBluetoothAddress.equals(addr)) {
-                        //we're dealing with sensor "key" :)
-                        //Log.d(null, "found sensor!  " + key);
-                        shimmer = shimmersMap.get(key);
-                        switch (msg.what) { // handlers have a what identifier which is used to identify the type of msg
-                            case Shimmer.MESSAGE_READ:
+                        //PITCH ROLL AND YAW
+                        float angle = 0, x = 0, y = 0, z = 0;
+                        Collection<FormatCluster> angleAFormats = objectCluster.mPropertyCluster.get("Axis Angle A");
+                        formatCluster = ObjectCluster.returnFormatCluster(angleAFormats, "CAL"); // retrieve the calibrated data
+                        if (formatCluster != null) {
+                            angle = (float) formatCluster.mData;
+                        }
+                        Collection<FormatCluster> angleXFormats = objectCluster.mPropertyCluster.get("Axis Angle X");  // first retrieve all the possible formats for the current sensor device
+                        formatCluster = ObjectCluster.returnFormatCluster(angleXFormats, "CAL"); // retrieve the calibrated data
+                        if (formatCluster != null) {
+                            x = (float) formatCluster.mData;
+                        }
+                        Collection<FormatCluster> angleYFormats = objectCluster.mPropertyCluster.get("Axis Angle Y");  // first retrieve all the possible formats for the current sensor device
+                        formatCluster = ObjectCluster.returnFormatCluster(angleYFormats, "CAL"); // retrieve the calibrated data
+                        if (formatCluster != null) {
+                            y = (float) formatCluster.mData;
+                        }
+                        Collection<FormatCluster> angleZFormats = objectCluster.mPropertyCluster.get("Axis Angle Z");  // first retrieve all the possible formats for the current sensor device
+                        formatCluster = ObjectCluster.returnFormatCluster(angleZFormats, "CAL"); // retrieve the calibrated data
+                        if (formatCluster != null) {
+                            z = (float) formatCluster.mData;
+                        }
+                        AxisAngle4d aa = new AxisAngle4d(x, y, z, angle);
+                        Quat4d qt = new Quat4d();
+                        qt.set(aa);
+                        //Formula to find PitchRollYaw from quats applied
+                        double pitch = Math.asin(-2 * (qt.x * qt.z - qt.w * qt.y));
+                        double roll = Math.atan2(2 * (qt.x * qt.y + qt.w * qt.z), (qt.w * qt.w + qt.x * qt.x - qt.y * qt.y - qt.z * qt.z));
+                        double yaw = Math.atan2(2 * (qt.y * qt.z + qt.w * qt.x), qt.w * qt.w - qt.x * qt.x - qt.y * qt.y + qt.z * qt.z);
 
-                                Collection<FormatCluster> accelXFormats = objectCluster.mPropertyCluster.get("Low Noise Accelerometer X");  // first retrieve all the possible formats for the current sensor device
-                                FormatCluster formatCluster = ObjectCluster.returnFormatCluster(accelXFormats, "CAL"); // retrieve the calibrated data
-                                if (formatCluster != null) {
-                                    if (isPlotting) recordFragment.addToPoints(formatCluster.mData, key, C.ACCEL_X);
-                                    magArr[0] = formatCluster.mData * formatCluster.mData;
+                        pitch = (180 * pitch) / Math.PI;
+                        if (isPlotting) recordFragment.addToPoints(pitch, sensor, C.PITCH);
+
+
+                        roll = (180 * roll) / Math.PI;
+                        if (isPlotting) recordFragment.addToPoints(roll, sensor, C.ROLL);
+
+                        yaw = (180 * yaw) / Math.PI;
+                        if (isPlotting) recordFragment.addToPoints(yaw, sensor, C.YAW);
+
+                        // Log.d("PRY", "pitch: " + pitch + "\troll: " + roll + "\tyaw: " + yaw);
+
+
+                        break;
+                    case Shimmer.MESSAGE_TOAST:
+                        Toast.makeText(getBaseContext(), msg.getData().getString(Shimmer.TOAST),
+                                Toast.LENGTH_SHORT).show();
+                        //Log.d("objtest", "objtest winning in MESSAGE TOAST");
+
+                        break;
+                    case Shimmer.MESSAGE_STATE_CHANGE:
+                        //Log.d("objtest", "obtest winning in MESSAGE CHANGE");
+
+                        switch (msg.arg1) {
+                            case Shimmer.MSG_STATE_FULLY_INITIALIZED:
+                                //Log.d("objtest", "objtest winning in STATE FULLY_INITIALIZED");
+                                if (shimmer.getShimmerState() == Shimmer.STATE_CONNECTED) {
+                                    //Log.d("objtest", "objtest winning in STATE CONNECTED");
+
+                                    Toast.makeText(getBaseContext(), "Successful", Toast.LENGTH_SHORT).show();
+
+                                    isConnectedMap.put(sensor, true);
+                                    //Log.d(null, "putting into isConnected Map true: " + key);
+                                    connectFragment.redrawLocalIndicators();
+                                    connectFragment.setButtonTexts();
                                 }
-
-                                Collection<FormatCluster> accelYFormats = objectCluster.mPropertyCluster.get("Low Noise Accelerometer Y");  // first retrieve all the possible formats for the current sensor device
-                                formatCluster = ObjectCluster.returnFormatCluster(accelYFormats, "CAL"); // retrieve the calibrated data
-                                if (formatCluster != null) {
-                                    if (isPlotting) recordFragment.addToPoints(formatCluster.mData, key, C.ACCEL_Y);
-                                    magArr[1] = formatCluster.mData * formatCluster.mData;
-                                }
-
-                                Collection<FormatCluster> accelZFormats = objectCluster.mPropertyCluster.get("Low Noise Accelerometer Z");  // first retrieve all the possible formats for the current sensor device
-                                formatCluster = ObjectCluster.returnFormatCluster(accelZFormats, "CAL"); // retrieve the calibrated data
-                                if (formatCluster != null) {
-                                    if (isPlotting) recordFragment.addToPoints(formatCluster.mData, key, C.ACCEL_Z);
-                                    magArr[2] = formatCluster.mData * formatCluster.mData;
-                                }
-
-                                mag = Math.sqrt(magArr[0] + magArr[1] + magArr[2]);
-                                if (isPlotting) recordFragment.addToPoints(mag, key, C.ACCEL_MAG);
-
-
-                                //PITCH ROLL AND YAW
-                                float angle = 0, x = 0, y = 0, z = 0;
-                                Collection<FormatCluster> angleAFormats = objectCluster.mPropertyCluster.get("Axis Angle A");
-                                formatCluster = ObjectCluster.returnFormatCluster(angleAFormats, "CAL"); // retrieve the calibrated data
-                                if (formatCluster != null) {
-                                    angle = (float) formatCluster.mData;
-                                }
-                                Collection<FormatCluster> angleXFormats = objectCluster.mPropertyCluster.get("Axis Angle X");  // first retrieve all the possible formats for the current sensor device
-                                formatCluster = ObjectCluster.returnFormatCluster(angleXFormats, "CAL"); // retrieve the calibrated data
-                                if (formatCluster != null) {
-                                    x = (float) formatCluster.mData;
-                                }
-                                Collection<FormatCluster> angleYFormats = objectCluster.mPropertyCluster.get("Axis Angle Y");  // first retrieve all the possible formats for the current sensor device
-                                formatCluster = ObjectCluster.returnFormatCluster(angleYFormats, "CAL"); // retrieve the calibrated data
-                                if (formatCluster != null) {
-                                    y = (float) formatCluster.mData;
-                                }
-                                Collection<FormatCluster> angleZFormats = objectCluster.mPropertyCluster.get("Axis Angle Z");  // first retrieve all the possible formats for the current sensor device
-                                formatCluster = ObjectCluster.returnFormatCluster(angleZFormats, "CAL"); // retrieve the calibrated data
-                                if (formatCluster != null) {
-                                    z = (float) formatCluster.mData;
-                                }
-                                AxisAngle4d aa = new AxisAngle4d(x, y, z, angle);
-                                Quat4d qt = new Quat4d();
-                                qt.set(aa);
-                                //Formula to find PitchRollYaw from quats applied
-                                double pitch = Math.asin(-2 * (qt.x * qt.z - qt.w * qt.y));
-                                double roll = Math.atan2(2 * (qt.x * qt.y + qt.w * qt.z), (qt.w * qt.w + qt.x * qt.x - qt.y * qt.y - qt.z * qt.z));
-                                double yaw = Math.atan2(2 * (qt.y * qt.z + qt.w * qt.x), qt.w * qt.w - qt.x * qt.x - qt.y * qt.y + qt.z * qt.z);
-
-                                pitch = (180 * pitch) / Math.PI;
-                                if (isPlotting) recordFragment.addToPoints(pitch, key, C.PITCH);
-
-
-                                roll = (180 * roll) / Math.PI;
-                                if (isPlotting) recordFragment.addToPoints(roll, key, C.ROLL);
-
-                                yaw = (180 * yaw) / Math.PI;
-                                if (isPlotting) recordFragment.addToPoints(yaw, key, C.YAW);
-
-                               // Log.d("PRY", "pitch: " + pitch + "\troll: " + roll + "\tyaw: " + yaw);
-
-
                                 break;
-                            case Shimmer.MESSAGE_TOAST:
-                                Toast.makeText(getBaseContext(), msg.getData().getString(Shimmer.TOAST),
-                                        Toast.LENGTH_SHORT).show();
-                                //          Log.d("objtest", "objtest winning in MESSAGE TOAST");
+                            case Shimmer.STATE_CONNECTING:
+                                //Log.d("objtest", "objtest winning in STATE CONNECTING");
 
+                                Toast.makeText(getBaseContext(), "Connecting", Toast.LENGTH_SHORT).show();
                                 break;
-                            case Shimmer.MESSAGE_STATE_CHANGE:
-                                //                Log.d("objtest", "obtest winning in MESSAGE CHANGE");
+                            case Shimmer.STATE_NONE:
+                                //Log.d("objtest", "objtest winning in STATE NONE");
 
-                                switch (msg.arg1) {
-                                    case Shimmer.MSG_STATE_FULLY_INITIALIZED:
-                                        //                       Log.d("objtest", "objtest winning in STATE FULLY_INITIALIZED");
-                                        if (shimmer.getShimmerState() == Shimmer.STATE_CONNECTED) {
-                                            //                         Log.d("objtest", "objtest winning in STATE CONNECTED");
-
-                                            Toast.makeText(getBaseContext(), "Successful", Toast.LENGTH_SHORT).show();
-
-                                            isConnectedMap.put(key, true);
-                                            //                         Log.d(null, "putting into isConnected Map true: " + key);
-                                            connectFragment.redrawLocalIndicators();
-                                            connectFragment.setButtonTexts();
-                                            //menuIndicators.get(ConnectFragment.LEFT_THIGH).setIcon(R.drawable.ic_greencircle);
-
-                                        }
-                                        break;
-                                    case Shimmer.STATE_CONNECTING:
-                                        //                       Log.d("objtest", "objtest winning in STATE CONNECTING");
-
-                                        Toast.makeText(getBaseContext(), "Connecting", Toast.LENGTH_SHORT).show();
-                                        break;
-                                    case Shimmer.STATE_NONE:
-                                        //                        Log.d("objtest", "objtest winning in STATE NONE");
-
-                                        Toast.makeText(getBaseContext(), "No State", Toast.LENGTH_SHORT).show();
-                                        //menuIndicators.get(ConnectFragment.LEFT_THIGH).setIcon(R.drawable.ic_redcircle);
-
-                                        break;
-                                }
+                                Toast.makeText(getBaseContext(), "No State", Toast.LENGTH_SHORT).show();
                                 break;
                         }
-                    }
+                        break;
                 }
             }
+
         }
+
     };
 
 
 }
 
 
-
-
-/*
-if (isConnectedMap.get(ConnectFragment.LEFT_THIGH)) {
-        Log.d(null, "redrawing " + menuIndicators.get(ConnectFragment.LEFT_THIGH));
-        menuIndicators.get(ConnectFragment.LEFT_THIGH).setIcon(R.drawable.ic_greencircle);
-        } else {
-        menuIndicators.get(ConnectFragment.LEFT_THIGH).setIcon(R.drawable.ic_redcircle);
-        }
-        if (isConnectedMap.get(ConnectFragment.LEFT_CALF)) {
-        menuIndicators.get(ConnectFragment.LEFT_CALF).setIcon(R.drawable.ic_greencircle);
-        } else {
-        menuIndicators.get(ConnectFragment.LEFT_CALF).setIcon(R.drawable.ic_redcircle);
-        }
-        if (isConnectedMap.get(ConnectFragment.RIGHT_THIGH)) {
-        menuIndicators.get(ConnectFragment.RIGHT_THIGH).setIcon(R.drawable.ic_greencircle);
-        } else {
-        menuIndicators.get(ConnectFragment.RIGHT_THIGH).setIcon(R.drawable.ic_redcircle);
-        }
-        if (isConnectedMap.get(ConnectFragment.LEFT_CALF)) {
-        menuIndicators.get(ConnectFragment.LEFT_CALF).setIcon(R.drawable.ic_greencircle);
-        } else {
-        menuIndicators.get(ConnectFragment.LEFT_CALF).setIcon(R.drawable.ic_redcircle);
-        }
-        if (isConnectedMap.get(ConnectFragment.LOWER_BACK)) {
-        menuIndicators.get(ConnectFragment.LOWER_BACK).setIcon(R.drawable.ic_greencircle);
-        } else {
-        menuIndicators.get(ConnectFragment.LOWER_BACK).setIcon(R.drawable.ic_redcircle);
-        }
-
-
-
-    
-*/
