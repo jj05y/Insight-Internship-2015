@@ -17,7 +17,6 @@ import com.shimmerresearch.MultiShimmerRecordReview.Activities.DeviceListActivit
 import com.shimmerresearch.MultiShimmerRecordReview.Constants.C;
 import com.shimmerresearch.MultiShimmerRecordReview.Interfaces.Linker;
 import com.shimmerresearch.android.Shimmer;
-import com.shimmerresearch.driver.Configuration;
 import com.shimmerresearch.multishimmerrecordreview.R;
 
 import java.util.HashMap;
@@ -40,24 +39,10 @@ public class ConnectFragment extends Fragment {
     HashMap<String, Boolean> isConnected;
 
     private HashMap<String, ImageView> indicators;
+    private HashMap<String, TextView> addressTexts;
 
-    private Button ltNew;
-    private Button ltOld;
-    private Button lcNew;
-    private Button lcOld;
-    private Button lbNew;
-    private Button lbOld;
-    private Button rtNew;
-    private Button rtOld;
-    private Button rcNew;
-    private Button rcOld;
-
-    private TextView ltCode;
-    private TextView lcCode;
-    private TextView lbCode;
-    private TextView rtCode;
-    private TextView rcCode;
-
+    private HashMap<String, Button> newButtons;
+    private HashMap<String, Button> oldButtons;
 
     private View myInflatedView;
 
@@ -71,14 +56,15 @@ public class ConnectFragment extends Fragment {
         linker = (Linker) getActivity();
         addresses = linker.getAddressesMap();
         shimmers = linker.getShimmersMap();
-        if (indicators == null) {
-            initializeIndicators();
-        } else {
-            redrawLocalIndicators();
-        }
         isConnected = linker.getIsConnectedMap();
 
-        Configuration.setTooLegacyObjectClusterSensorNames();
+        initializeIndicators();
+        initializeAddressTexts();
+        initializeButtons();
+        Log.d("redraw", "redrawing");
+        redrawLocalIndicators();
+        setButtonTexts();
+
 
         View.OnClickListener newListener = new View.OnClickListener() {
             @Override
@@ -156,34 +142,12 @@ public class ConnectFragment extends Fragment {
             }
         };
 
-        ltCode = (TextView) myInflatedView.findViewById(R.id.text_lt_code);
-        lcCode = (TextView) myInflatedView.findViewById(R.id.text_lc_code);
-        lbCode = (TextView) myInflatedView.findViewById(R.id.text_lb_code);
-        rtCode = (TextView) myInflatedView.findViewById(R.id.text_rt_code);
-        rcCode = (TextView) myInflatedView.findViewById(R.id.text_rc_code);
 
 
-        ltNew = (Button) myInflatedView.findViewById(R.id.button_lt_n);
-        ltOld = (Button) myInflatedView.findViewById(R.id.button_lt_o);
-        lcNew = (Button) myInflatedView.findViewById(R.id.button_lc_n);
-        lcOld = (Button) myInflatedView.findViewById(R.id.button_lc_o);
-        lbNew = (Button) myInflatedView.findViewById(R.id.button_lb_n);
-        lbOld = (Button) myInflatedView.findViewById(R.id.button_lb_o);
-        rtNew = (Button) myInflatedView.findViewById(R.id.button_rt_n);
-        rtOld = (Button) myInflatedView.findViewById(R.id.button_rt_o);
-        rcNew = (Button) myInflatedView.findViewById(R.id.button_rc_n);
-        rcOld = (Button) myInflatedView.findViewById(R.id.button_rc_o);
-
-        ltNew.setOnClickListener(newListener);
-        ltOld.setOnClickListener(oldListener);
-        lcNew.setOnClickListener(newListener);
-        lcOld.setOnClickListener(oldListener);
-        lbNew.setOnClickListener(newListener);
-        lbOld.setOnClickListener(oldListener);
-        rtNew.setOnClickListener(newListener);
-        rtOld.setOnClickListener(oldListener);
-        rcNew.setOnClickListener(newListener);
-        rcOld.setOnClickListener(oldListener);
+        for (String sensor : C.SENSORS) {
+            newButtons.get(sensor).setOnClickListener(newListener);
+            oldButtons.get(sensor).setOnClickListener(oldListener);
+        }
 
 
         Button connectAllButton = (Button) myInflatedView.findViewById(R.id.button_connect_all);
@@ -239,139 +203,88 @@ public class ConnectFragment extends Fragment {
             }
         });
 
-
-        redrawLocalIndicators();
-        setButtonTexts();
-
         return myInflatedView;
     }
 
+
+
+
     public void setButtonTexts() {
-        Iterator it = isConnected.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, Boolean> e = (Map.Entry<String, Boolean>) it.next();
-            Button newButton = null;
-            Button oldButton = null;
-
-            switch (e.getKey()) {
-                case C.LEFT_THIGH:
-                    newButton = ltNew;
-                    oldButton = ltOld;
-                    break;
-                case C.LEFT_CALF:
-                    newButton = lcNew;
-                    oldButton = lcOld;
-                    break;
-                case C.LOWER_BACK:
-                    newButton = lbNew;
-                    oldButton = lbOld;
-                    break;
-                case C.RIGHT_THIGH:
-                    newButton = rtNew;
-                    oldButton = rtOld;
-                    break;
-                case C.RIGHT_CALF:
-                    newButton = rcNew;
-                    oldButton = rcOld;
-                    break;
-            }
-
-            if (e.getValue()) {
+        for (String sensor : C.SENSORS) {
+            if (isConnected.get(sensor)) {
                 //need to set the 2 buttons to disconnect,, buttons id'd by key
-                newButton.setText("Disconnect");
-                oldButton.setVisibility(View.INVISIBLE);
+                newButtons.get(sensor).setText("Disconnect");
+                oldButtons.get(sensor).setVisibility(View.INVISIBLE);
             } else {
                 //need to set one button to connect new and the other to connect ****,
-                newButton.setText("Connect New");
-                oldButton.setVisibility(View.VISIBLE);
-                oldButton.setText("Connect " + workOutSensorCode(e.getKey()));
+                newButtons.get(sensor).setText("Connect New");
+                oldButtons.get(sensor).setVisibility(View.VISIBLE);
+                oldButtons.get(sensor).setText("Connect " + workOutSensorCode(sensor));
             }
-
         }
     }
 
-    private String workOutSensorCode(String key) {
-        String addr = addresses.get(key);
+    private String workOutSensorCode(String sensor) {
+        String addr = addresses.get(sensor);
         String code = "";
-        Button b = null;
 
-        switch (key) {
-            case C.LEFT_THIGH:
-                b = ltOld;
-                break;
-            case C.LEFT_CALF:
-                b = lcOld;
-                break;
-            case C.LOWER_BACK:
-                b = lbOld;
-                break;
-            case C.RIGHT_THIGH:
-                b = rtOld;
-                break;
-            case C.RIGHT_CALF:
-                b = rcOld;
-                break;
-        }
         if (addr.equals(DEFAULT_ADDRESS)) {
-            b.setVisibility(View.INVISIBLE);
+            oldButtons.get(sensor).setVisibility(View.INVISIBLE);
         } else {
-            b.setVisibility(View.VISIBLE);
+            oldButtons.get(sensor).setVisibility(View.VISIBLE);
             code = addr.split(":")[4] + addr.split(":")[5];
         }
         return code;
     }
 
     public void redrawLocalIndicators() {
-        if (!isConnected.get(C.LEFT_THIGH)) {
-            ((ImageView) myInflatedView.findViewById(R.id.imageView)).setImageResource(R.drawable.ic_redcircle);
-            ltCode.setText("");
-        } else {
-            ((ImageView) myInflatedView.findViewById(R.id.imageView)).setImageResource(R.drawable.ic_greencircle);
-            ltCode.setText(workOutSensorCode(C.LEFT_THIGH));
-        }
 
-        if (!isConnected.get(C.LEFT_CALF)) {
-            ((ImageView) myInflatedView.findViewById(R.id.imageView2)).setImageResource(R.drawable.ic_redcircle);
-            lcCode.setText("");
-        } else {
-            ((ImageView) myInflatedView.findViewById(R.id.imageView2)).setImageResource(R.drawable.ic_greencircle);
-            lcCode.setText(workOutSensorCode(C.LEFT_CALF));
+        for (String sensor : C.SENSORS) {
+            Log.d("redraw", "sensor " + sensor + " is " + isConnected.get(sensor));
+            if (!isConnected.get(sensor)) {
+                indicators.get(sensor).setImageResource(R.drawable.ic_redcircle);
+                addressTexts.get(sensor).setText("");
+            } else {
+                Log.d("redraw", "hi");
+                indicators.get(sensor).setImageResource(R.drawable.ic_greencircle);
+                addressTexts.get(sensor).setText(workOutSensorCode(sensor));
+            }
         }
-
-        if (!isConnected.get(C.RIGHT_THIGH)) {
-            ((ImageView) myInflatedView.findViewById(R.id.imageView5)).setImageResource(R.drawable.ic_redcircle);
-            rtCode.setText("");
-        } else {
-            ((ImageView) myInflatedView.findViewById(R.id.imageView5)).setImageResource(R.drawable.ic_greencircle);
-            rtCode.setText(workOutSensorCode(C.RIGHT_THIGH));
-        }
-
-        if (!isConnected.get(C.RIGHT_CALF)) {
-            ((ImageView) myInflatedView.findViewById(R.id.imageView6)).setImageResource(R.drawable.ic_redcircle);
-            rcCode.setText("");
-        } else {
-            ((ImageView) myInflatedView.findViewById(R.id.imageView6)).setImageResource(R.drawable.ic_greencircle);
-            rcCode.setText(workOutSensorCode(C.RIGHT_CALF));
-        }
-
-        if (!isConnected.get(C.LOWER_BACK)) {
-            ((ImageView) myInflatedView.findViewById(R.id.imageView3)).setImageResource(R.drawable.ic_redcircle);
-            lbCode.setText("");
-        } else {
-            ((ImageView) myInflatedView.findViewById(R.id.imageView3)).setImageResource(R.drawable.ic_greencircle);
-            lbCode.setText(workOutSensorCode(C.LOWER_BACK));
-        }
-
     }
 
     private void initializeIndicators() {
         indicators = new HashMap<>();
-        indicators.put(C.LEFT_THIGH, (ImageView) myInflatedView.findViewById(R.id.imageView));
-        indicators.put(C.LEFT_CALF, (ImageView) myInflatedView.findViewById(R.id.imageView2));
-        indicators.put(C.RIGHT_THIGH, (ImageView) myInflatedView.findViewById(R.id.imageView3));
-        indicators.put(C.RIGHT_CALF, (ImageView) myInflatedView.findViewById(R.id.imageView5));
-        indicators.put(C.LOWER_BACK, (ImageView) myInflatedView.findViewById(R.id.imageView6));
+        indicators.put(C.LEFT_THIGH, (ImageView) myInflatedView.findViewById(R.id.image_lt));
+        indicators.put(C.LEFT_CALF, (ImageView) myInflatedView.findViewById(R.id.image_lc));
+        indicators.put(C.LOWER_BACK, (ImageView) myInflatedView.findViewById(R.id.image_lb));
+        indicators.put(C.RIGHT_THIGH, (ImageView) myInflatedView.findViewById(R.id.image_rt));
+        indicators.put(C.RIGHT_CALF, (ImageView) myInflatedView.findViewById(R.id.image_rc));
 
+    }
+
+    private void initializeAddressTexts() {
+        addressTexts = new HashMap<>();
+        addressTexts.put(C.RIGHT_CALF, (TextView) myInflatedView.findViewById(R.id.text_rc_code));
+        addressTexts.put(C.LEFT_THIGH, (TextView) myInflatedView.findViewById(R.id.text_lt_code));
+        addressTexts.put(C.LEFT_CALF, (TextView) myInflatedView.findViewById(R.id.text_lc_code));
+        addressTexts.put(C.LOWER_BACK, (TextView) myInflatedView.findViewById(R.id.text_lb_code));
+        addressTexts.put(C.RIGHT_THIGH, (TextView) myInflatedView.findViewById(R.id.text_rt_code));
+    }
+
+    private void initializeButtons() {
+        oldButtons = new HashMap<>();
+        newButtons = new HashMap<>();
+
+        newButtons.put(C.LEFT_THIGH, (Button) myInflatedView.findViewById(R.id.button_lt_n));
+        oldButtons.put(C.LEFT_THIGH, (Button) myInflatedView.findViewById(R.id.button_lt_o));
+        newButtons.put(C.LEFT_CALF, (Button) myInflatedView.findViewById(R.id.button_lc_n));
+        oldButtons.put(C.LEFT_CALF, (Button) myInflatedView.findViewById(R.id.button_lc_o));
+        newButtons.put(C.LOWER_BACK, (Button) myInflatedView.findViewById(R.id.button_lb_n));
+        oldButtons.put(C.LOWER_BACK, (Button) myInflatedView.findViewById(R.id.button_lb_o));
+        newButtons.put(C.RIGHT_THIGH, (Button) myInflatedView.findViewById(R.id.button_rt_n));
+        oldButtons.put(C.RIGHT_THIGH, (Button) myInflatedView.findViewById(R.id.button_rt_o));
+        newButtons.put(C.RIGHT_CALF, (Button) myInflatedView.findViewById(R.id.button_rc_n));
+        oldButtons.put(C.RIGHT_CALF, (Button) myInflatedView.findViewById(R.id.button_rc_o));
     }
 
 
@@ -388,7 +301,6 @@ public class ConnectFragment extends Fragment {
                 addresses.put(currentlyConnecting, bluetoothAddress);
                 shimmers.get(currentlyConnecting).connect(bluetoothAddress, "default"); //currentlyConnecting has been set as clicked button
             }
-
         } else {
             Toast.makeText(getActivity(), "No Shimmer Selected", Toast.LENGTH_SHORT).show();
         }
@@ -396,16 +308,11 @@ public class ConnectFragment extends Fragment {
     }
 
     private void clearOtherAddresses(String bluetoothAddress) {
-        Iterator<Map.Entry<String, String>> it = (Iterator<Map.Entry<String, String>>) addresses.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, String> e = it.next();
-            if (e.getValue().equals(bluetoothAddress)) {
-                addresses.put(e.getKey(), DEFAULT_ADDRESS);
+        //if another sensor has this address, it looses it :(
+        for (String sensor : C.SENSORS) {
+            if (addresses.get(sensor).equals(bluetoothAddress)) {
+                addresses.put(sensor, DEFAULT_ADDRESS);
             }
         }
     }
-
-
-
-
 }

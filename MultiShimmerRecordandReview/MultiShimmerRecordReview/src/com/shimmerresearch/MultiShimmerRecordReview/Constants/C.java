@@ -5,7 +5,7 @@ public class C {
 
     public static final String[] LABELS = {"Label Not Set", "Good", "Bad"};
     public static final String[] EXERCISES = {"Exercise Not Set", "Squat", "Lunge", "Deadlift"};
-    public static final int DL_INDEX = 2;
+    public static final int DL_INDEX = 3;
 
     public final static String LEFT_THIGH = "leftthigh";
     public final static String RIGHT_THIGH = "rightthigh";

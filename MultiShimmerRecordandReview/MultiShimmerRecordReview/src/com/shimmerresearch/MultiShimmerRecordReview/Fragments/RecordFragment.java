@@ -287,6 +287,7 @@ public class RecordFragment extends Fragment implements VideoSplitCallBackListen
 
     }
 
+
     private int randColor() {
         int color = Color.argb(255, rand.nextInt(256), rand.nextInt(256), rand.nextInt(256));
         return color;
@@ -663,6 +664,7 @@ public class RecordFragment extends Fragment implements VideoSplitCallBackListen
     @Override
     public void onVideoSplitComplete() {
 
+
         //this is called from the vidSplitter,,, and only deletes the orginal video file when finished with it,
         numberOfVidsDone++;
         Log.d("vidCallback", "#done: " + numberOfVidsDone + "\t #todo: " + numberofVidsToDo);
@@ -700,8 +702,8 @@ public class RecordFragment extends Fragment implements VideoSplitCallBackListen
 
         }
 
-
         return filteredVals;
     }
+
 
 }

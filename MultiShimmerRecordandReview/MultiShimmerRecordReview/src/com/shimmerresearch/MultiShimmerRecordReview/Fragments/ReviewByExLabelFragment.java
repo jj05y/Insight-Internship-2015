@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 import android.widget.ExpandableListView;
 
 import com.shimmerresearch.MultiShimmerRecordReview.Adapters.ExpandableListAdapter;
-import com.shimmerresearch.MultiShimmerRecordReview.Adapters.ViewPagerAdapter;
+import com.shimmerresearch.MultiShimmerRecordReview.Adapters.ViewPagerAdapterReviewByExLabel;
 import com.shimmerresearch.MultiShimmerRecordReview.Constants.C;
 import com.shimmerresearch.MultiShimmerRecordReview.Interfaces.Linker;
 import com.shimmerresearch.MultiShimmerRecordReview.ListItems.ItemForReview;
@@ -29,7 +29,7 @@ public class ReviewByExLabelFragment extends Fragment {
     private DatabaseHandler db;
     private ArrayList<ItemForReview> thingsForReview;
     private ViewPager pager;
-    private ViewPagerAdapter pagerAdapter;
+    private ViewPagerAdapterReviewByExLabel pagerAdapter;
     private List<String> listDataHeaders;
     private HashMap<String, List<String>> listDataChildren;
 
@@ -79,7 +79,7 @@ public class ReviewByExLabelFragment extends Fragment {
 
                 thingsForReview = db.getAllWithExerciseAndLabel(exercise, label);
 
-                pagerAdapter = new ViewPagerAdapter(thingsForReview, getActivity(), db, C.REVIEW_BY_LABEL);
+                pagerAdapter = new ViewPagerAdapterReviewByExLabel(thingsForReview, getActivity(), db, C.REVIEW_BY_LABEL);
                 pager.setAdapter(pagerAdapter);
 
                 return false;
@@ -95,7 +95,7 @@ public class ReviewByExLabelFragment extends Fragment {
 
                 thingsForReview = db.getAllWithExerciseAndLabel(exercise, label);
 
-                pagerAdapter = new ViewPagerAdapter(thingsForReview, getActivity(), db, C.REVIEW_BY_LABEL);
+                pagerAdapter = new ViewPagerAdapterReviewByExLabel(thingsForReview, getActivity(), db, C.REVIEW_BY_LABEL);
                 pager.setAdapter(pagerAdapter);
 
                 return true;

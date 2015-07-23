@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Generic Classify</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="none_found">No devices found</string>
+    <string name="none_paired">No devices have been paired</string>
+    <string name="select_device">select a Shimmer to connect</string>
+
+
+</resources>

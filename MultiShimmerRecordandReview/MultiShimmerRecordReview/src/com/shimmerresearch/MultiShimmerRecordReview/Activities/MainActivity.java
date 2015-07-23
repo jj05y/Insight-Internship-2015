@@ -86,7 +86,7 @@ public class MainActivity extends Activity implements Linker {
 
 
         db = new DatabaseHandler(this);
-        isPlotting = Boolean.FALSE;
+        isPlotting = false;
 
         navItems = new ArrayList<>();
         navItems.add(new NavItem("Set Up Sensors", R.drawable.ic_shimmer));
@@ -144,6 +144,7 @@ public class MainActivity extends Activity implements Linker {
         plotSensorsMap = new HashMap<>();
         plotSignalsMap = new HashMap<>();
 
+
         plotSensorsMap.put(C.LOWER_BACK, true);
         plotSensorsMap.put(C.LEFT_THIGH, false);
         plotSensorsMap.put(C.LEFT_CALF, false);
@@ -164,11 +165,10 @@ public class MainActivity extends Activity implements Linker {
 
     private void createIsConnectedMap() {
         isConnectedMap = new HashMap<>();
-        isConnectedMap.put(C.LEFT_THIGH, false);
-        isConnectedMap.put(C.LEFT_CALF, false);
-        isConnectedMap.put(C.RIGHT_THIGH, false);
-        isConnectedMap.put(C.RIGHT_CALF, false);
-        isConnectedMap.put(C.LOWER_BACK, false);
+        for (String sensor : C.SENSORS) {
+            isConnectedMap.put(sensor, false);
+
+        }
 
     }
 // C.SAMPLE_RATE, 0, 4, ,
@@ -215,7 +215,7 @@ public class MainActivity extends Activity implements Linker {
         fragmentManager.beginTransaction().replace(R.id.mainContent, fragment).commit();
 
         drawerList.setItemChecked(i, true);
-        setTitle(navItems.get(i).getText());
+        setTitle(navItems.get(i).getText()); //hehehehehe todo - overide set title
         drawerLayout.closeDrawer(drawerPane);
 
     }
@@ -305,11 +305,9 @@ public class MainActivity extends Activity implements Linker {
 
         SharedPreferences savedAddresses = getPreferences(Context.MODE_PRIVATE);
         addressesMap = new HashMap<>();
-        addressesMap.put(C.LEFT_THIGH, savedAddresses.getString(C.LEFT_THIGH, ConnectFragment.DEFAULT_ADDRESS));
-        addressesMap.put(C.RIGHT_THIGH, savedAddresses.getString(C.RIGHT_THIGH, ConnectFragment.DEFAULT_ADDRESS));
-        addressesMap.put(C.LEFT_CALF, savedAddresses.getString(C.LEFT_CALF, ConnectFragment.DEFAULT_ADDRESS));
-        addressesMap.put(C.RIGHT_CALF, savedAddresses.getString(C.RIGHT_CALF, ConnectFragment.DEFAULT_ADDRESS));
-        addressesMap.put(C.LOWER_BACK, savedAddresses.getString(C.LOWER_BACK, ConnectFragment.DEFAULT_ADDRESS));
+        for (String sensor : C.SENSORS) {
+            addressesMap.put(sensor, savedAddresses.getString(sensor, ConnectFragment.DEFAULT_ADDRESS));
+        }
 
 
     }
@@ -317,30 +315,29 @@ public class MainActivity extends Activity implements Linker {
     @Override
     public void onStop() {
         super.onStop();
-
-        shimmersMap.get(C.LEFT_THIGH).stop();
-        shimmersMap.get(C.LEFT_CALF).stop();
-        shimmersMap.get(C.RIGHT_THIGH).stop();
-        shimmersMap.get(C.RIGHT_CALF).stop();
-        shimmersMap.get(C.LOWER_BACK).stop();
-
-
         SharedPreferences savedAddresses = getPreferences(Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = savedAddresses.edit();
-        editor.putString(C.LEFT_THIGH, addressesMap.get(C.LEFT_THIGH));
-        editor.putString(C.LEFT_CALF, addressesMap.get(C.LEFT_CALF));
-        editor.putString(C.RIGHT_THIGH, addressesMap.get(C.RIGHT_THIGH));
-        editor.putString(C.RIGHT_CALF, addressesMap.get(C.RIGHT_CALF));
-        editor.putString(C.LOWER_BACK, addressesMap.get(C.LOWER_BACK));
+
+        for (String sensor : C.SENSORS) {
+            shimmersMap.get(sensor).stop();
+            editor.putString(sensor, addressesMap.get(sensor));
+        }
         editor.commit();
 
     }
 
     @Override
     protected void onResume() {
-        //todo,,, verify sensors
-        Log.d("resume", "resuming");
+    //todo needs testing properly,
+    //    Log.d("resume", "resuming");
 
+     //   Log.d("resume", "shimmers state = " + shimmersMap.get(C.LOWER_BACK).getShimmerState());
+
+        for (String sensor : C.SENSORS) {
+
+            isConnectedMap.put(sensor, shimmersMap.get(sensor).getShimmerState() == Shimmer.STATE_CONNECTED);
+         //   Log.d("resume", "for sensor " + sensor + " putting in " + (shimmersMap.get(sensor).getShimmerState() == Shimmer.STATE_CONNECTED));
+        }
 
         super.onResume();
     }

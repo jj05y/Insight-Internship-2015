@@ -7,30 +7,25 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ListView;
-import android.widget.TextView;
 
-import com.shimmerresearch.MultiShimmerRecordReview.Adapters.ReviewListViewAdapter;
-import com.shimmerresearch.MultiShimmerRecordReview.Adapters.ViewPagerAdapter;
-import com.shimmerresearch.MultiShimmerRecordReview.Constants.C;
+import com.shimmerresearch.MultiShimmerRecordReview.Adapters.ViewPagerAdapterReviewByName;
+import com.shimmerresearch.MultiShimmerRecordReview.DatabaseClasses.DatabaseHandler;
 import com.shimmerresearch.MultiShimmerRecordReview.Interfaces.Linker;
 import com.shimmerresearch.MultiShimmerRecordReview.ListItems.ItemForReview;
 import com.shimmerresearch.MultiShimmerRecordReview.MiscUtil.ZoomOutPageTransformer;
-import com.shimmerresearch.MultiShimmerRecordReview.DatabaseClasses.DatabaseHandler;
 import com.shimmerresearch.multishimmerrecordreview.R;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 
 public class ReviewByNameFragment extends Fragment {
 
-    private ArrayList<String> listOfNames;
     private Linker linker;
     private DatabaseHandler db;
     private ArrayList<ItemForReview> thingsForReview;
     private ViewPager pager;
-    private ViewPagerAdapter pagerAdapter;
+    private ViewPagerAdapterReviewByName pagerAdapter;
 
 
     public ReviewByNameFragment() {
@@ -47,32 +42,18 @@ public class ReviewByNameFragment extends Fragment {
 
         Log.d("page", "opened pager fragment");
 
-        ListView listView = (ListView) myInflatedView.findViewById(R.id.list_view);
+        if (db.getAllNames().isEmpty()) {
+            thingsForReview = new ArrayList<>();
+            thingsForReview.add(new ItemForReview("", 0, "", 0, 0, 0, new HashMap<String, ArrayList<Double>>(), new HashMap<String, ArrayList<Double>>(), new HashMap<String, ArrayList<Double>>(), new HashMap<String, ArrayList<Double>>(), new HashMap<String, ArrayList<Double>>(), new HashMap<String, ArrayList<Double>>(), new HashMap<String, ArrayList<Double>>()));
+        } else {
+            thingsForReview = (db.getAllWithName(db.getAllNames().get(0)));
+        }
 
 
-        listOfNames = db.getAllNames();
+        pagerAdapter = new ViewPagerAdapterReviewByName(thingsForReview, getActivity(), db, this, 0);
+        pager.setAdapter(pagerAdapter);
 
 
-        ReviewListViewAdapter listViewAdapter = new ReviewListViewAdapter(getActivity(), android.R.layout.simple_list_item_1, listOfNames);
-        listView.setAdapter(listViewAdapter);
-
-
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, final View view, int position, long id) {
-
-                //list.remove(parent.getItemAtPosition(position));
-                TextView temp = (TextView) view.findViewById(android.R.id.text1);
-                String selectedItem = temp.getText().toString();
-
-                thingsForReview = db.getAllWithName(selectedItem);
-
-                pagerAdapter = new ViewPagerAdapter(thingsForReview, getActivity(), db, C.REVIEW_BY_NAME);
-                pager.setAdapter(pagerAdapter);
-
-
-            }
-        });
 
         pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
 
@@ -97,13 +78,12 @@ public class ReviewByNameFragment extends Fragment {
         return myInflatedView;
     }
 
+    public void reloadPages(String selectedName, int selectedPos) { //this is called from whithin the view pager adapter
+        thingsForReview = (db.getAllWithName(selectedName));
 
+        pagerAdapter = new ViewPagerAdapterReviewByName(thingsForReview, getActivity(), db, this, selectedPos);
+        pager.setAdapter(pagerAdapter);
 
-
-    @Override
-    public void onPause() {
-        super.onPause();
     }
-
 
 }

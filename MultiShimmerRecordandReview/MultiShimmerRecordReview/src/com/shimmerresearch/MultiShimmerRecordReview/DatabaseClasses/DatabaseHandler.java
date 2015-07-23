@@ -217,7 +217,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         ArrayList<ItemForReview> listForReview = new ArrayList<>();
 
         //need to get all rows from db with name, AND THEN, populate a list of horizontal item for review
-        String selectQuery = "SELECT * FROM " + TABLE_DETAILS + " WHERE " + KEY_EXERCISE + " = " + exercise;
+        String selectQuery = "SELECT * FROM " + TABLE_DETAILS + " WHERE " + KEY_EXERCISE + " = " + exercise + " AND " + KEY_LABEL + " = " + label;
         if (label != -1){
             selectQuery += " AND " + KEY_LABEL + " = " + label;
         }
