@@ -56,18 +56,13 @@ public class ReviewByExLabelFragment extends Fragment {
         listDataHeaders = new ArrayList<>();
         listDataChildren = new HashMap<>();
 
-
-        for (String s: C.EXERCISES) {
-            if (s.equals(C.EXERCISES[0])) continue;
-            listDataHeaders.add(s);
-        }
-
-        for (String header : listDataHeaders) {
+        for (int i = 1; i < C.EXERCISES.length; i++) {
+            listDataHeaders.add(C.EXERCISES[i]);
             ArrayList<String> children = new ArrayList<>();
-            for (String label: linker.findSpecificLabels(linker.findIndex(header))) {
+            for (String label : linker.findSpecificLabels(i)) {
                 children.add(label);
             }
-            listDataChildren.put(header, children);
+            listDataChildren.put(C.EXERCISES[i], children);
         }
 
 

@@ -3,9 +3,9 @@ package classify.Constants;
 
 public class C {
 
-    public static final String[] LABELS = {"Label Not Set", "Square", "Circle", "Up/Down", "Left/Right"};
+    public static final String[] LABELS = {"Label Not Set", "Square", "Circle", "Triangle", "Up/Down", "Left/Right"};
     public static final String[] EXERCISES = {"Type Not Set", "Shape", "Wiggle"};
-
+    //todo - always update corresponding arrays - OR ELSE!
     public static final int[] SHAPE_LABEL_INDEXES = {0, 1, 2};
     public static final int[] WIGGLE_LABEL_INDEXES = {0, 3, 4};
 
