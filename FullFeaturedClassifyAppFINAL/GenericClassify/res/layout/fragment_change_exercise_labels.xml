@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="70dp">
+
+            <TextView
+                android:id="@+id/text_exercises_in_labels_frag"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Exercises:"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/editText_add_exercise"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Add a new Exercise" />
+
+                <Button
+                    android:id="@+id/button_add_exercise"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" + " />
+            </LinearLayout>
+
+            <ListView
+                android:id="@+id/listView_exercise_change"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="70dp">
+
+            <TextView
+                android:id="@+id/text_labels_for"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Labels for: "
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/editText_add_label"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Add a new label" />
+
+                <Button
+                    android:id="@+id/button_add_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" + " />
+            </LinearLayout>
+
+            <ListView
+                android:id="@+id/listView_label_change"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="Warning: Deleting Exercises or Labels that are currently used to in recorded data will cause issues!"
+        android:id="@+id/textView16"
+        android:layout_marginBottom="7dp" />
+
+</LinearLayout>

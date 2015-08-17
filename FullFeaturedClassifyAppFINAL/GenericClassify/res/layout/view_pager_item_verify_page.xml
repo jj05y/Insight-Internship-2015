@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:padding="50dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Medium Text"
+            android:id="@+id/text_verify_rep_numbers"
+            android:layout_marginBottom="30dp" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Name:"
+                android:id="@+id/textView7"
+                android:layout_weight="1"
+                android:layout_marginTop="7dp" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Medium Text"
+                android:id="@+id/text_verify_name"
+                android:layout_weight="1"
+                android:layout_marginTop="7dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Actual Label:"
+                android:id="@+id/textView8"
+                android:layout_weight="1"
+                android:layout_marginTop="7dp" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Medium Text"
+                android:id="@+id/text_verify_actual"
+                android:layout_weight="1"
+                android:layout_marginTop="7dp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Predicted Label:"
+                android:id="@+id/textView9"
+                android:layout_weight="1"
+                android:layout_marginTop="7dp" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="Medium Text"
+                android:id="@+id/text_verify_predicted"
+                android:layout_weight="1"
+                android:layout_marginTop="7dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="17dp">
+
+            <Button
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Keep Prediction"
+                android:id="@+id/button_keep_prediction"
+                android:layout_weight="1"
+                android:layout_marginTop="7dp" />
+
+            <Button
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Ignore Prediction"
+                android:id="@+id/button_ignore_prediction"
+                android:layout_weight="1"
+                android:layout_marginTop="7dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <VideoView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/new_verify_video_view"
+        android:layout_weight="1"
+        android:layout_marginTop="70dp"
+        android:layout_marginBottom="70dp"
+        android:layout_marginLeft="7dp"
+        android:layout_marginRight="7dp" />
+
+
+</LinearLayout>

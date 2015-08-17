@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="horizontal"
+    tools:context="com.shimmerresearch.MultiShimmerRecordReview.Fragments.ConnectFragment">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="50dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Choose Signals:"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:id="@+id/textView2" />
+
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <CheckBox
+                    android:id="@+id/cb_accel_mag"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:checked="true"
+                    android:text="Accel Mag" />
+
+                <CheckBox
+                    android:id="@+id/cb_accel_x"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Accel X" />
+
+                <CheckBox
+                    android:id="@+id/cb_accel_y"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Accel Y" />
+
+                <CheckBox
+                    android:id="@+id/cb_accel_z"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Accel Z" />
+
+                <CheckBox
+                    android:id="@+id/cb_gyro_mag"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Gyro Mag" />
+
+                <CheckBox
+                    android:id="@+id/cb_gyro_x"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Gyro X" />
+
+                <CheckBox
+                    android:id="@+id/cb_gyro_y"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Gyro Y" />
+
+                <CheckBox
+                    android:id="@+id/cb_gyro_z"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Gyro Z" />
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:layout_marginLeft="40dp">
+
+                <CheckBox
+                    android:id="@+id/cb_quat_w"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:checked="false"
+                    android:text="Quaternion W" />
+
+                <CheckBox
+                    android:id="@+id/cb_quat_x"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Quaternion X" />
+
+                <CheckBox
+                    android:id="@+id/cb_quat_y"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Quaternion Y" />
+
+                <CheckBox
+                    android:id="@+id/cb_quat_z"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Quaternion Z" />
+
+                <CheckBox
+                    android:id="@+id/cb_pitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Pitch" />
+
+                <CheckBox
+                    android:id="@+id/cb_roll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Roll" />
+
+                <CheckBox
+                    android:id="@+id/cb_yaw"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Yaw" />
+            </LinearLayout>
+        </LinearLayout>
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="50dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Choose Sensors:"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            />
+
+        <CheckBox
+            android:id="@+id/cb_main_sensor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Main Sensor"
+            android:checked="true" />
+
+        <CheckBox
+            android:id="@+id/cb_sensor2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Sensor2"
+            android:checked="false" />
+
+        <CheckBox
+            android:id="@+id/cb_sensor3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Sensor3"
+            android:checked="false" />
+
+        <CheckBox
+            android:id="@+id/cb_sensor4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Sensor4"
+            android:checked="false" />
+
+        <CheckBox
+            android:id="@+id/cb_sensor5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Sensor5"
+            android:checked="false" />
+
+
+    </LinearLayout>
+</LinearLayout>
